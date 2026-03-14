@@ -1,0 +1,81 @@
+/* login-style.css */
+
+* { 
+    box-sizing: border-box; 
+    font-family: 'Poppins', 'Sarabun', sans-serif; 
+}
+
+body { 
+    background: linear-gradient(135deg, #e0f7fa 0%, #e1f5fe 100%);
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    margin: 0; 
+}
+
+/* เอฟเฟกต์กระจกฝ้า (Glassmorphism) */
+.form-container {
+    background: rgba(255, 255, 255, 0.45); 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px);
+    padding: 2.5rem;
+    border-radius: 20px; 
+    border: 1px solid rgba(255, 255, 255, 0.18); 
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); 
+    width: 100%;
+    max-width: 420px;
+}
+
+h2 { 
+    text-align: center; 
+    color: #1a237e; 
+    margin-bottom: 2rem; 
+    font-weight: 800;
+}
+
+.input-group { 
+    margin-bottom: 1.2rem; 
+}
+
+.input-group label { 
+    display: block; 
+    margin-bottom: 0.6rem; 
+    color: #5c6bc0; 
+    font-size: 0.95rem; 
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.8); 
+    border: 1px solid #c5cae9;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #5c6bc0;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(92, 107, 192, 0.2);
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(45deg, #3949ab, #5c6bc0);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.btn-submit:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(57, 73, 171, 0.3);
+}

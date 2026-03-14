@@ -1,0 +1,58 @@
+/* ล้างค่าพื้นฐานและตั้ง Font */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', 'Sarabun', sans-serif;
+}
+
+/* พื้นหลังแบบ Gradient เหมือนหน้าฟอร์มเพื่อให้ดูต่อเนื่องกัน */
+body {
+    background: linear-gradient(135deg, #e0f7fa 0%, #e1f5fe 100%);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* กล่องครอบที่ช่วยจัดวางทุกอย่างไว้กลางจอ */
+.welcome-container {
+    text-align: center;
+    
+}
+
+/* ตกแต่งตัวหนังสือหัวข้อ */
+.system-title {
+    font-size: 6rem;
+    color: #1a237e;
+    margin-bottom: 2rem;
+    letter-spacing: 1px;
+    /* ใส่เงาบางๆ ให้ตัวหนังสือดูมีมิติ */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ตกแต่งปุ่มหลัก (สำคัญที่สุด) */
+.enter-button {
+    display: inline-block;
+    padding: 18px 45px;
+    background: linear-gradient(45deg, #3949ab, #5c6bc0);
+    color: white;
+    text-decoration: none; /* เอาเส้นใต้ของลิงก์ออก */
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 50px; /* ทำปุ่มให้เป็นทรงมนยาว (Capsule Shape) */
+    box-shadow: 0 10px 20px rgba(57, 73, 171, 0.3);
+    transition: all 0.3s ease; /* ใส่ความสมูทเวลาเอาเมาส์ชี้ */
+}
+
+/* เอฟเฟกต์เวลาเอาเมาส์ไปชี้ที่ปุ่ม (Hover) */
+.enter-button:hover {
+    transform: scale(1.05); /* ทำให้ปุ่มขยายใหญ่ขึ้นเล็กน้อย */
+    box-shadow: 0 15px 25px rgba(57, 73, 171, 0.4);
+    background: linear-gradient(45deg, #283593, #3f51b5);
+}
+
+/* เอฟเฟกต์เวลากดปุ่ม (Active) */
+.enter-button:active {
+    transform: scale(0.98); /* ทำให้ปุ่มยุบลงเล็กน้อยเหมือนกดจริง */
+}

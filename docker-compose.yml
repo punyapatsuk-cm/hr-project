@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  hr-db:
+    image: mysql:8.0
+    container_name: hr_mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: hr_attendance_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: hr_phpmyadmin
+    ports:
+      - "8080:80"  # เราจะเข้าเว็บผ่านพอร์ต 8080 แทน
+    environment:
+      PMA_HOST: hr-db
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - hr-db
