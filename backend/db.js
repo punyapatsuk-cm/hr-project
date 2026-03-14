@@ -9,7 +9,7 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
 });
 
 // ทดสอบการเชื่อมต่อ
@@ -21,6 +21,7 @@ pool.getConnection((err, connection) => {
         connection.release();
     }
 });
+
 
 // ส่งออกเป็นแบบ Promise เพื่อให้ใช้ async/await ได้ง่ายๆ ในอนาคต
 module.exports = pool.promise();

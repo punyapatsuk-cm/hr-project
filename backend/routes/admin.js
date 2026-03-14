@@ -24,6 +24,47 @@ router.get('/leaves/pending', async (req, res) => {
 });
 
 // ==========================================
+// 🏢 [READ] ดึงข้อมูลแผนกทั้งหมด
+// ==========================================
+// ต้องมี API ตัวนี้เพื่อส่งรายชื่อแผนกให้หน้าเว็บ
+router.get('/departments', async (req, res) => {
+    try {
+        const [results] = await db.query("SELECT * FROM departments");
+        console.log("Departments found:", results); // บรรทัดนี้จะช่วยให้คุณเห็นใน Terminal ว่าข้อมูลมาไหม
+        res.status(200).json(results);
+    } catch (error) {
+        console.error("Database Error:", error);
+        res.status(500).json({ message: 'Error fetching departments' });
+    }
+});
+
+// [UPDATE] แก้ไขข้อมูลพนักงาน
+router.put('/employees/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { first_name, last_name, role, dept_id, hourly_rate } = req.body;
+
+        // ตรวจสอบค่าก่อนบันทึก: ถ้าค่าเป็นค่าว่าง ให้ส่งเป็น null หรือค่าเริ่มต้นแทน
+        const final_dept_id = dept_id === "" ? null : dept_id;
+        const final_hourly_rate = hourly_rate === "" ? 0.00 : hourly_rate;
+
+        const sql = `
+            UPDATE employees 
+            SET first_name = ?, last_name = ?, role = ?, dept_id = ?, hourly_rate = ? 
+            WHERE emp_id = ?
+        `;
+        
+        await db.query(sql, [first_name, last_name, role, final_dept_id, final_hourly_rate, id]);
+
+        res.status(200).json({ message: 'แก้ไขข้อมูลสำเร็จ' });
+    } catch (error) {
+        // 💡 ถ้าล้มเหลว ให้ดู Error ในหน้า Terminal (จอดำ) ของพี่ได้เลยครับ
+        console.error("❌ Update Error:", error); 
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล' });
+    }
+});
+
+// ==========================================
 // ✅❌ API: PUT /api/admin/leaves/update-status (อนุมัติ/ปฏิเสธ ใบลา)
 // ==========================================
 router.put('/leaves/update-status', async (req, res) => {
@@ -70,23 +111,20 @@ router.put('/leaves/update-status', async (req, res) => {
 });
 
 // ==========================================
-// 👥 [READ] ดึงรายชื่อพนักงานทั้งหมด + โควตาวันลา
+// [READ] ดึงรายชื่อพนักงานทั้งหมด (รวมชื่อแผนก)
 // ==========================================
+// ใน routes/admin.js หา API employees/all แล้วแก้ SQL ครับ
 router.get('/employees/all', async (req, res) => {
     try {
-        // แก้ไข SQL: เอา e.id ออก เผื่อตารางคุณไม่มีคอลัมน์นี้
         const sql = `
-            SELECT e.emp_id, e.first_name, e.last_name, e.role, 
-                   b.sick_leave_remaining, b.personal_leave_remaining, b.annual_leave_remaining
-            FROM employees e
-            LEFT JOIN leave_balances b ON e.emp_id = b.emp_id
+            SELECT e.*, d.name AS dept_name 
+            FROM employees e 
+            LEFT JOIN departments d ON e.dept_id = d.id
         `;
         const [results] = await db.query(sql);
         res.status(200).json(results);
     } catch (error) {
-        // ให้มันพิมพ์สาเหตุที่พังจริงๆ ออกมาที่ Terminal (VS Code)
-        console.error('❌ SQL Error (ดึงรายชื่อพนักงาน):', error.sqlMessage || error);
-        res.status(500).json({ message: 'เกิดข้อผิดพลาด: ' + (error.sqlMessage || 'ไม่สามารถดึงข้อมูลได้') });
+        res.status(500).json({ message: 'Error' });
     }
 });
 
@@ -140,6 +178,57 @@ router.delete('/employees/:emp_id', async (req, res) => {
         res.status(200).json({ message: 'ลบข้อมูลพนักงานเรียบร้อยแล้ว' });
     } catch (error) {
         res.status(500).json({ message: 'ลบข้อมูลไม่สำเร็จ' });
+    }
+});
+
+// ==========================================
+// 📢 [CREATE] เพิ่มประกาศข่าวสารใหม่
+// ==========================================
+router.post('/announcements', async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        if (!title || !content) {
+            return res.status(400).json({ message: 'กรุณากรอกหัวข้อและเนื้อหาให้ครบถ้วน' });
+        }
+        
+        const sql = "INSERT INTO announcements (title, content) VALUES (?, ?)";
+        await db.query(sql, [title, content]);
+        
+        res.status(201).json({ message: 'สร้างประกาศสำเร็จเรียบร้อย' });
+    } catch (error) {
+        console.error('Create Announcement Error:', error);
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการสร้างประกาศ' });
+    }
+});
+
+// ==========================================
+// 📢 [READ] ดึงรายการประกาศข่าวสารทั้งหมด
+// ==========================================
+router.get('/announcements', async (req, res) => {
+    try {
+        // ดึงประกาศเรียงจากใหม่สุด (DESC) ไปเก่าสุด
+        const sql = "SELECT * FROM announcements ORDER BY created_at DESC";
+        const [results] = await db.query(sql);
+        res.status(200).json(results);
+    } catch (error) {
+        console.error('Fetch Announcements Error:', error);
+        res.status(500).json({ message: 'ไม่สามารถดึงข้อมูลประกาศได้' });
+    }
+});
+
+// ==========================================
+// 📢 [DELETE] ลบประกาศข่าวสาร
+// ==========================================
+router.delete('/announcements/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sql = "DELETE FROM announcements WHERE id = ?";
+        await db.query(sql, [id]);
+        
+        res.status(200).json({ message: 'ลบประกาศสำเร็จ' });
+    } catch (error) {
+        console.error('Delete Announcement Error:', error);
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบประกาศ' });
     }
 });
 

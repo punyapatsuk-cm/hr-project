@@ -20,24 +20,15 @@
                 </div>
             </div>
             <ul class="sidebar-menu">
-                <li>
-                    <a href="#" class="active" onclick="switchPage(event, 'page-approve-leave', this)">
-                        <i class="fas fa-check-square"></i> อนุมัติการลางาน
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="switchPage(event, 'page-manage-employees', this)">
-                        <i class="fas fa-users"></i> จัดการพนักงาน
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="switchPage(event, 'page-report', this)">
-                        <i class="fas fa-chart-pie"></i> รายงานภาพรวม
-                    </a>
-                </li>
-                <li>
-                    <a href="login.html" style="color: #ff6b6b;"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</a>
-                </li>
+                <li><a href="#" class="active" onclick="switchPage(event, 'page-approve-leave', this)"><i
+                            class="fas fa-check-square"></i> อนุมัติการลางาน</a></li>
+                <li><a href="#" onclick="switchPage(event, 'page-manage-employees', this)"><i class="fas fa-users"></i>
+                        จัดการพนักงาน</a></li>
+                <li><a href="#" onclick="switchPage(event, 'page-report', this)"><i class="fas fa-chart-pie"></i>
+                        รายงานภาพรวม</a></li>
+                <li><a href="#" onclick="switchPage(event, 'page-announcements', this)"><i class="fas fa-bullhorn"></i>
+                        จัดการประกาศ</a></li>
+                <li><a href="login.html" style="color: #ff6b6b;"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</a></li>
             </ul>
         </aside>
 
@@ -49,40 +40,39 @@
             <div class="content-area">
 
                 <div id="page-approve-leave" class="page-section">
-
                     <h2 class="section-title"><i class="fas fa-clipboard-list"></i> รายการขอลางาน (รออนุมัติ)</h2>
                     <div class="card">
-                        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: center;">
                             <thead>
                                 <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <th style="padding: 12px;">รหัสพนักงาน</th>
-                                    <th style="padding: 12px;">ชื่อ-นามสกุล</th>
-                                    <th style="padding: 12px;">ประเภท</th>
-                                    <th style="padding: 12px;">เหตุผลการลา</th>
-                                    <th style="padding: 12px;">วันที่ลา</th>
-                                    <th style="padding: 12px;">เอกสารแนบ</th>
-                                    <th style="padding: 12px;">การจัดการ</th>
+                                    <th style="padding:12px;">รหัสพนักงาน</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ประเภท</th>
+                                    <th>เหตุผล</th>
+                                    <th>วันที่ลา</th>
+                                    <th>เอกสาร</th>
+                                    <th>จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-leave-table-body">
                                 <tr>
-                                    <td colspan="7" style="padding: 20px;">กำลังโหลดข้อมูล...</td>
+                                    <td colspan="7" style="padding: 20px;">กำลังโหลด...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <h2 class="section-title" style="margin-top: 30px;"><i class="fas fa-list"></i>
-                        โควตาวันลาคงเหลือของพนักงาน</h2>
+                    <h2 class="section-title" style="margin-top: 30px;"><i class="fas fa-list"></i> โควตาวันลาคงเหลือ
+                    </h2>
                     <div class="card">
                         <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
                             <thead>
                                 <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
                                     <th style="padding: 12px;">ID</th>
-                                    <th style="padding: 12px;">ชื่อ-นามสกุล</th>
-                                    <th style="padding: 12px;">ป่วย (คงเหลือ)</th>
-                                    <th style="padding: 12px;">กิจ (คงเหลือ)</th>
-                                    <th style="padding: 12px;">พักร้อน (คงเหลือ)</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ป่วย (คงเหลือ)</th>
+                                    <th>กิจ (คงเหลือ)</th>
+                                    <th>พักร้อน (คงเหลือ)</th>
                                 </tr>
                             </thead>
                             <tbody id="quota-list-body">
@@ -92,134 +82,163 @@
                             </tbody>
                         </table>
                     </div>
-
                 </div>
 
                 <div id="page-manage-employees" class="page-section" style="display: none;">
-
-                    <h2 class="section-title"><i class="fas fa-user-plus"></i> เพิ่มพนักงานเข้าระบบ</h2>
-                    <div class="card" style="margin-bottom: 25px;">
-                        <form id="add-employee-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-
-                            <div class="form-group">
-                                <label>รหัสพนักงาน:</label>
-                                <input type="text" id="new-emp-id" placeholder="" required
-                                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            </div>
-                            <div class="form-group">
-                                <label>Password:</label>
-                                <div style="display: flex; align-items: center;">
-                                    <input type="text" id="new-password" required placeholder=""
-                                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>ชื่อ:</label>
-                                <input type="text" id="new-first-name" required
-                                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            </div>
-                            <div class="form-group">
-                                <label>นามสกุล:</label>
-                                <input type="text" id="new-last-name" required
-                                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            </div>
-
-                            <div class="form-group">
-                                <label>สิทธิ์การใช้งาน:</label>
-                                <select id="new-role"
-                                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                    <option value="user">พนักงานทั่วไป</option>
-                                    <option value="admin">HR / Admin</option>
-                                </select>
-                            </div>
-
+                    <h2 class="section-title"><i class="fas fa-user-plus"></i> เพิ่มพนักงานใหม่</h2>
+                    <div class="card" style="margin-bottom: 20px;">
+                        <form id="add-employee-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input type="text" id="new-emp-id" placeholder="รหัสพนักงาน" required style="padding:8px;">
+                            <input type="text" id="new-password" placeholder="รหัสผ่าน" required style="padding:8px;">
+                            <input type="text" id="new-first-name" placeholder="ชื่อ" required style="padding:8px;">
+                            <input type="text" id="new-last-name" placeholder="นามสกุล" required style="padding:8px;">
+                            <select id="new-role" style="padding:8px;">
+                                <option value="user">พนักงานทั่วไป</option>
+                                <option value="admin">HR / Admin</option>
+                            </select>
                             <button type="submit"
-                                style="grid-column: span 2; background-color: #2ecc71; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 10px;">
-                                <i class="fas fa-save"></i> บันทึกข้อมูลพนักงาน
-                            </button>
+                                style="background:#2ecc71; color:white; border:none; border-radius:4px; cursor:pointer; grid-column: span 2; padding: 10px;">บันทึกเพิ่มพนักงาน</button>
                         </form>
                     </div>
-
                     <div class="card">
-                        <h3><i class="fas fa-users"></i> รายชื่อพนักงาน (จัดการบัญชีผู้ใช้)</h3>
-                        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 15px;">
+                        <h3>รายชื่อพนักงานทั้งหมด</h3>
+                        <table style="width: 100%; border-collapse: collapse; text-align: center; margin-top:10px;">
                             <thead>
-                                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <th style="padding: 12px;">ID</th>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th>ID</th>
                                     <th>ชื่อ-นามสกุล</th>
-                                    <th>สิทธิ์การใช้งาน</th>
+                                    <th>สิทธิ์</th>
                                     <th>จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="employee-list-body">
-                                <tr>
-                                    <td colspan="4" style="padding: 20px;">กำลังโหลดข้อมูล...</td>
-                                </tr>
-                            </tbody>
+                            <tbody id="employee-list-body"></tbody>
                         </table>
                     </div>
                 </div>
+
                 <div id="page-report" class="page-section" style="display: none;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h2 class="section-title" style="margin: 0;"><i class="fas fa-file-invoice-dollar"></i>
                             รายงานสรุปเงินเดือน</h2>
-
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <label style="font-weight: bold;">เลือกเดือน:</label>
                             <input type="month" id="report-month"
                                 style="padding: 8px; border: 1px solid #ccc; border-radius: 5px;">
                             <button onclick="loadSalaryReport()"
-                                style="background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">
-                                <i class="fas fa-search"></i> ค้นหา
-                            </button>
+                                style="background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;"><i
+                                    class="fas fa-search"></i> ค้นหา</button>
                             <button onclick="exportSalaryCSV()"
-                                style="background-color: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                                <i class="fas fa-file-excel"></i> ดาวน์โหลด Excel
-                            </button>
+                                style="background-color: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;"><i
+                                    class="fas fa-file-excel"></i> ดาวน์โหลด CSV</button>
                         </div>
                     </div>
-
                     <div class="card">
                         <table id="salary-table"
                             style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
-                            ... (โค้ดตารางเดิม) ...
-                            <div id="page-report" class="page-section" style="display: none;">
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                    <h2 class="section-title" style="margin: 0;"><i
-                                            class="fas fa-file-invoice-dollar"></i>
-                                        รายงานสรุปเงินเดือน (เดือนปัจจุบัน)</h2>
-                                    <button onclick="exportSalaryCSV()"
-                                        style="background-color: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: bold;">
-                                        <i class="fas fa-file-excel"></i> ดาวน์โหลด Excel
-                                    </button>
-                                </div>
-
-                                <div class="card">
-                                    <table id="salary-table"
-                                        style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
-                                        <thead>
-                                            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                                <th style="padding: 12px;">รหัสพนักงาน</th>
-                                                <th style="padding: 12px;">ชื่อ-นามสกุล</th>
-                                                <th style="padding: 12px; color: #17a2b8;">ชั่วโมงทำงานรวม</th>
-                                                <th style="padding: 12px; color: #fd7e14;">OT รวม</th>
-                                                <th style="padding: 12px; color: #28a745;">รวมเงินที่ต้องจ่าย (บาท)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="salary-report-body">
-                                            <tr>
-                                                <td colspan="5" style="padding: 20px;">กำลังโหลดข้อมูล...</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
+                            <thead>
+                                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                    <th>รหัสพนักงาน</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>ชั่วโมงทำงาน</th>
+                                    <th>OT รวม</th>
+                                    <th>รวมเงิน (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salary-report-body"></tbody>
+                        </table>
                     </div>
+                </div>
+
+                <div id="page-announcements" class="page-section" style="display: none;">
+                    <h2 class="section-title"><i class="fas fa-bullhorn"></i> จัดการประกาศข่าวสาร</h2>
+                    <div class="card" style="margin-bottom: 20px; border-top: 5px solid #e67e22;">
+                        <h3><i class="fas fa-plus-circle"></i> สร้างประกาศใหม่</h3>
+                        <form id="announcement-form" style="margin-top: 15px;">
+                            <div style="margin-bottom: 15px;">
+                                <label
+                                    style="display: block; margin-bottom: 5px; font-weight: bold;">หัวข้อประกาศ:</label>
+                                <input type="text" id="announce-title" placeholder="เช่น แจ้งวันหยุดบริษัท..." required
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em;">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label
+                                    style="display: block; margin-bottom: 5px; font-weight: bold;">รายละเอียดเนื้อหา:</label>
+                                <textarea id="announce-content" placeholder="พิมพ์รายละเอียดที่นี่..." required
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; height: 120px; resize: vertical;"></textarea>
+                            </div>
+                            <button type="submit" class="btn-announce"
+                                style="background: #e67e22; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: bold; width: 100%;">
+                                <i class="fas fa-paper-plane"></i> แจ้งประกาศ
+                            </button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-history"></i> รายการประกาศทั้งหมด</h3>
+                        <div id="admin-announcement-list" style="margin-top: 15px;">
+                            <p style="text-align: center; color: #999;">กำลังโหลดข้อมูล...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </main>
+    </div>
+
+    <div id="editEmployeeModal"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;">
+        <div
+            style="background: white; padding: 25px; border-radius: 12px; width: 450px; max-width: 90%; box-shadow: 0 8px 20px rgba(0,0,0,0.3); margin: auto;">
+            <h3 style="margin-top: 0; color: #2c3e50;"><i class="fas fa-user-edit" style="color:#f39c12;"></i>
+                แก้ไขข้อมูลพนักงาน</h3>
+            <hr style="border: 0.5px solid #eee; margin-bottom: 20px;">
+
+            <form id="edit-employee-form">
+                <input type="hidden" id="edit-emp-id">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">ชื่อ:</label>
+                        <input type="text" id="edit-first-name" required
+                            style="width:100%; padding:10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">นามสกุล:</label>
+                        <input type="text" id="edit-last-name" required
+                            style="width:100%; padding:10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">แผนก (Department):</label>
+                    <select id="edit-dept" required
+                        style="width:100%; padding:10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;"></select>
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">ค่าจ้างต่อชั่วโมง
+                        (บาท):</label>
+                    <input type="number" id="edit-hourly-rate" required
+                        style="width:100%; padding:10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;"
+                        min="0">
+                </div>
+
+                <div style="margin-bottom:25px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">สิทธิ์การใช้งาน:</label>
+                    <select id="edit-role" required
+                        style="width:100%; padding:10px; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box;">
+                        <option value="user">พนักงานทั่วไป (User)</option>
+                        <option value="admin">HR / Admin</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit"
+                        style="flex:1; background:#3498db; color:white; border:none; padding:12px; border-radius:6px; cursor:pointer; font-weight: bold; font-size: 1em;">บันทึก</button>
+                    <button type="button" onclick="closeEditModal()"
+                        style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:6px; cursor:pointer; font-weight: bold; font-size: 1em;">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="admin.js"></script>

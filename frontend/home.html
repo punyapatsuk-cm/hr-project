@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="home.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    
+
 </head>
 
 <body>
@@ -30,8 +30,9 @@
                         ข้อมูลส่วนตัว</a></li>
                 <li><a href="#" onclick="switchPage(event, 'page-schedule', this)"><i class="fas fa-table"></i>
                         ตารางการทำงาน</a></li>
-                
-                <li><a href="#" onclick="switchPage(event, 'page-leave', this)"><i class="fas fa-envelope-open-text"></i>
+
+                <li><a href="#" onclick="switchPage(event, 'page-leave', this)"><i
+                            class="fas fa-envelope-open-text"></i>
                         ขอลางาน</a></li>
 
                 <li><a href="#" onclick="switchPage(event, 'page-settings', this)"><i class="fas fa-cog"></i>
@@ -59,21 +60,41 @@
                 </div>
 
                 <div id="page-news" class="page-section">
-                    <h2 class="section-title">ประกาศล่าสุด</h2>
-                    <div class="card">
-                        <h3>อัปเดตระบบลาพักร้อน ประจำปี 2569</h3>
-                        <span class="badge">ประกาศจาก HR</span>
-                        <p>ขอให้พนักงานทุกคนเข้าไปตรวจสอบสิทธิวันลาพักร้อนคงเหลือในระบบ ภายในวันที่ 30 มีนาคมนี้</p>
+                    <h2 class="section-title"><i class="fas fa-bullhorn"></i> ประกาศล่าสุดจากบริษัท</h2>
+                    <div id="announcement-container">
+                        <div class="card">
+                            <p style="text-align: center; color: #666;">⏳ กำลังโหลดประกาศล่าสุด...</p>
+                        </div>
                     </div>
                 </div>
 
                 <div id="page-profile" class="page-section" style="display: none;">
-                    <h2 class="section-title">ข้อมูลส่วนตัวของฉัน</h2>
-                    <div class="card">
-                        <h3><i class="fas fa-id-card"></i> ข้อมูลพื้นฐาน</h3>
-                        <p>รหัสพนักงาน: <span id="profile-emp-id">กำลังโหลด...</span></p>
-                        <p>แผนก: ไอที (IT)</p>
-                        <p>ตำแหน่ง: Software Engineer</p>
+                    <h2 class="section-title"><i class="fas fa-user-circle"></i> ข้อมูลส่วนตัวของฉัน</h2>
+                    <div class="card" style="max-width: 600px;">
+                        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
+                            <i class="fas fa-id-card" style="color: #3498db;"></i> ข้อมูลพื้นฐาน
+                        </h3>
+
+                        <table style="width: 100%; text-align: left; font-size: 1.1em; line-height: 2;">
+                            <tr>
+                                <td style="font-weight: bold; width: 40%; color: #555;">รหัสพนักงาน:</td>
+                                <td id="profile-emp-id" style="color: #007bff; font-weight: bold;">กำลังโหลด...</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold; color: #555;">ชื่อ - นามสกุล:</td>
+                                <td id="profile-full-name">กำลังโหลด...</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold; color: #555;">แผนก (Department):</td>
+                                <td id="profile-dept">กำลังโหลด...</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold; color: #555;">สิทธิ์การใช้งาน:</td>
+                                <td><span id="profile-role" class="badge"
+                                        style="background: #e8f4fd; color: #3498db; border: 1px solid #3498db;">กำลังโหลด...</span>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 
@@ -126,12 +147,14 @@
 
                 <div id="page-leave" class="page-section" style="display: none;">
                     <h2 class="section-title">ส่งคำขอลางาน</h2>
-                    
+
                     <div class="card" style="max-width: 600px; margin: 0 auto;">
                         <form id="leave-form">
                             <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">ประเภทการลา:</label>
-                                <select id="leave-type" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                                <label
+                                    style="display: block; margin-bottom: 5px; font-weight: bold;">ประเภทการลา:</label>
+                                <select id="leave-type" required
+                                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
                                     <option value="">-- เลือกประเภทการลา --</option>
                                     <option value="Sick Leave">ลาป่วย</option>
                                     <option value="Personal Leave">ลากิจ</option>
@@ -140,24 +163,32 @@
                             </div>
                             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                                 <div style="flex: 1;">
-                                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">วันที่เริ่มต้น:</label>
-                                    <input type="date" id="leave-start" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                                    <label
+                                        style="display: block; margin-bottom: 5px; font-weight: bold;">วันที่เริ่มต้น:</label>
+                                    <input type="date" id="leave-start" required
+                                        style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
                                 </div>
                                 <div style="flex: 1;">
-                                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">วันที่สิ้นสุด:</label>
-                                    <input type="date" id="leave-end" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                                    <label
+                                        style="display: block; margin-bottom: 5px; font-weight: bold;">วันที่สิ้นสุด:</label>
+                                    <input type="date" id="leave-end" required
+                                        style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
                                 </div>
                             </div>
                             <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">เหตุผลการลา:</label>
-                                <textarea id="leave-reason" rows="3" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+                                <label
+                                    style="display: block; margin-bottom: 5px; font-weight: bold;">เหตุผลการลา:</label>
+                                <textarea id="leave-reason" rows="3" required
+                                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
                             </div>
                             <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">แนบเอกสาร (ถ้ามี):</label>
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">แนบเอกสาร
+                                    (ถ้ามี):</label>
                                 <input type="file" id="leave-attachment" accept="image/*,.pdf" style="width: 100%;">
                                 <small style="color: #666;">รองรับไฟล์รูปภาพ หรือ PDF (เช่น ใบรับรองแพทย์)</small>
                             </div>
-                            <button type="submit" style="background-color: #007bff; color: white; padding: 12px 20px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                            <button type="submit"
+                                style="background-color: #007bff; color: white; padding: 12px 20px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
                                 <i class="fas fa-paper-plane"></i> ส่งคำขอลางาน
                             </button>
                         </form>
