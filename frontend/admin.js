@@ -2,7 +2,7 @@
 const API_URL = 'http://localhost:1304/api/admin';
 
 // ==========================================
-// 🏢 1. โหลดข้อมูลแผนก (Departments)
+// 🏢 โหลดข้อมูลแผนก (Departments)
 // ==========================================
 async function loadDepartments() {
     try {
@@ -12,7 +12,9 @@ async function loadDepartments() {
 
         let options = '<option value="">-- เลือกแผนก --</option>';
         res.data.forEach(d => {
-            options += `<option value="${d.id}">${d.name}</option>`;
+            const deptId = d.dept_id || d.id;
+            const deptName = d.dept_name || d.name;
+            options += `<option value="${deptId}">${deptName}</option>`;
         });
 
         if (newDept) newDept.innerHTML = options;
@@ -30,10 +32,11 @@ async function loadPendingLeaves() {
         const response = await axios.get(`${API_URL}/leaves/pending`);
         const tbody = document.getElementById('admin-leave-table-body');
         if (!tbody) return;
-        tbody.innerHTML = '';
+
+        tbody.innerHTML = ''; 
 
         if (response.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; color: green;">🎉 ไม่มีรายการรอดำเนินการ</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; color: green; text-align: center;">🎉 ไม่มีรายการรอดำเนินการ</td></tr>';
             return;
         }
 
@@ -41,23 +44,44 @@ async function loadPendingLeaves() {
             const start = new Date(leave.start_date);
             const end = new Date(leave.end_date);
             const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-            const attachment = leave.attachment ? `<a href="http://localhost:1304/uploads/${leave.attachment}" target="_blank">ดูเอกสาร</a>` : '-';
+
+            const attachment = leave.attachment
+                ? `<a href="http://localhost:1304/uploads/${leave.attachment}" target="_blank" style="color: #007bff; text-decoration: none;">📄 ดูเอกสาร</a>`
+                : '-';
 
             tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px;">${leave.emp_id}</td>
+                <tr style="border-bottom: 1px solid #eee; text-align: center;">
+                    <td style="padding: 12px; font-weight: bold;">${leave.emp_id}</td>
                     <td>${leave.first_name} ${leave.last_name}</td>
-                    <td>${leave.leave_type} <br><small>(${diffDays} วัน)</small></td>
-                    <td style="max-width: 200px; word-wrap: break-word;">${leave.reason || '-'}</td>
-                    <td>${start.toLocaleDateString('th-TH')} - ${end.toLocaleDateString('th-TH')}</td>
+                    <td>
+                        <span style="background: #e9ecef; padding: 2px 8px; border-radius: 5px; font-size: 0.9em;">
+                            ${leave.leave_type}
+                        </span>
+                        <br><small style="color: #666;">(${diffDays} วัน)</small>
+                    </td>
+                    <td style="max-width: 150px; word-wrap: break-word; font-size: 0.9em;">${leave.reason || '-'}</td>
+                    <td>
+                        <div style="font-size: 0.85em;">
+                            ${start.toLocaleDateString('th-TH')} <br>ถึง<br> ${end.toLocaleDateString('th-TH')}
+                        </div>
+                    </td>
                     <td>${attachment}</td>
                     <td>
-                        <button onclick="handleLeaveAction(${leave.leave_id}, '${leave.emp_id}', '${leave.leave_type}', 'approved', ${diffDays})" style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; margin-right: 5px;">อนุมัติ</button>
-                        <button onclick="handleLeaveAction(${leave.leave_id}, '${leave.emp_id}', '${leave.leave_type}', 'rejected', ${diffDays})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">ปฏิเสธ</button>
+                        <button onclick="handleLeaveAction(${leave.leave_id}, '${leave.emp_id}', '${leave.leave_type}', 'approved', ${diffDays})" 
+                                style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-bottom: 5px; width: 80px;">
+                            อนุมัติ
+                        </button>
+                        
+                        <button onclick="handleLeaveAction(${leave.leave_id}, '${leave.emp_id}', '${leave.leave_type}', 'rejected', ${diffDays})" 
+                                style="background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; width: 80px;">
+                            ปฏิเสธ
+                        </button>
                     </td>
                 </tr>`;
         });
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error("Load Leaves Error:", err);
+    }
 }
 
 async function handleLeaveAction(leaveId, empId, leaveType, status, days) {
@@ -75,7 +99,6 @@ async function handleLeaveAction(leaveId, empId, leaveType, status, days) {
         const res = await axios.put(`${API_URL}/leaves/update-status`, payload);
         alert(`✅ ${res.data.message}`);
 
-        // รีโหลดข้อมูลให้เป็นปัจจุบันทันทีหลังกดปุ่ม
         loadPendingLeaves();
         updateDashboardStats();
         fetchAndRenderAllLeaveHistory();
@@ -223,7 +246,6 @@ async function loadSalaryReport() {
         const data = res.data;
         const tbody = document.getElementById('salary-report-body');
 
-        // 1. วาดลงตาราง
         if (tbody) {
             tbody.innerHTML = data.length ? '' : '<tr><td colspan="7" style="padding: 20px; color: #999;">ไม่พบข้อมูล</td></tr>';
             data.forEach(emp => {
@@ -241,7 +263,6 @@ async function loadSalaryReport() {
             });
         }
 
-        // 2. วาดลงกราฟ
         drawWorkHoursChart(data);
 
     } catch (err) { console.error("โหลดรายงานพลาด:", err); }
@@ -317,7 +338,7 @@ function exportSalaryCSV() {
 }
 
 // ==========================================
-// 📢 ระบบประกาศข่าวสาร
+// 📢 6. ระบบประกาศข่าวสาร
 // ==========================================
 async function loadAnnouncementsAdmin() {
     const listDiv = document.getElementById('admin-announcement-list');
@@ -331,13 +352,12 @@ async function loadAnnouncementsAdmin() {
             return;
         }
 
-        listDiv.innerHTML = ''; // ล้างของเก่าก่อนใส่ของใหม่
+        listDiv.innerHTML = ''; 
         res.data.forEach(item => {
             const date = new Date(item.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
             
-            // วาดกล่องประกาศ (Card ย่อย) ให้ดูมีมิติ
             listDiv.innerHTML += `
-                <div style="border: 1px solid #eaeaea; padding: 20px; border-radius: 8px; background: #fff; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 5px solid #e67e22;">
+                <div style="border: 1px solid #eaeaea; padding: 20px; border-radius: 8px; background: #fff; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 5px solid #e67e22; margin-bottom: 15px;">
                     <h4 style="color: #2c3e50; font-size: 1.15em; margin: 0 0 8px 0; padding-right: 50px;">${item.title}</h4>
                     <p style="margin: 0 0 12px 0; font-size: 0.85em; color: #7f8c8d;">
                         <i class="far fa-clock"></i> เผยแพร่เมื่อ: ${date}
@@ -356,32 +376,14 @@ async function loadAnnouncementsAdmin() {
     }
 }
 
-async function loadAnnouncementsAdmin() {
-    const listDiv = document.getElementById('admin-announcement-list');
-    if (!listDiv) return;
-
-    try {
-        const res = await axios.get(`${API_URL}/announcements`);
-        listDiv.innerHTML = res.data.length === 0 ? '<p style="text-align: center; color: #999;">ยังไม่มีประกาศในระบบ</p>' : '';
-
-        res.data.forEach(item => {
-            const date = new Date(item.created_at).toLocaleString('th-TH');
-            listDiv.innerHTML += `
-                <div style="border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #fafafa; position: relative;">
-                    <strong style="color: #e67e22; font-size: 1.1em;">${item.title}</strong>
-                    <p style="margin: 5px 0; font-size: 0.9em; color: #666;">เมื่อ: ${date}</p>
-                    <p style="margin-top: 8px; white-space: pre-line;">${item.content}</p>
-                    <button onclick="deleteAnnouncement(${item.id})" style="position: absolute; top: 15px; right: 15px; background: #ff4757; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i class="fas fa-trash"></i> ลบ</button>
-                </div>
-            `;
-        });
-    } catch (error) { listDiv.innerHTML = '<p style="color: red;">โหลดข้อมูลผิดพลาด</p>'; }
-}
-
 async function deleteAnnouncement(id) {
-    if (!confirm('ลบประกาศนี้?')) return;
-    try { await axios.delete(`${API_URL}/announcements/${id}`); loadAnnouncementsAdmin(); }
-    catch (error) { alert('❌ ลบไม่สำเร็จ'); }
+    if (!confirm('ยืนยันที่จะลบประกาศนี้ใช่หรือไม่?')) return;
+    try { 
+        await axios.delete(`${API_URL}/announcements/${id}`); 
+        loadAnnouncementsAdmin(); 
+    } catch (error) { 
+        alert('❌ ลบไม่สำเร็จ'); 
+    }
 }
 
 // ==========================================
@@ -390,7 +392,6 @@ async function deleteAnnouncement(id) {
 let allAdminLeaveRecords = [];
 let currentAdminPage = 1;
 
-// 🌟 แก้ไขบัคคำว่า await ซ้อนกันตรงนี้ให้แล้วครับ
 async function fetchAndRenderAllLeaveHistory() {
     try {
         const res = await axios.get(`${API_URL}/leave-history`);
@@ -442,23 +443,34 @@ function renderAdminLeaveTable() {
     };
 
     try {
-        tbody.innerHTML = recordsToShow.map(item => `
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="color: #7f8c8d;">${safeDate(item.created_at)}</td>
-                <td class="col-name">
-                    <strong style="color: #2c3e50;">${item.emp_id || '-'}</strong><br>
-                    ${item.first_name || ''} ${item.last_name || ''}
-                </td>
-                <td><span class="badge-type">${item.leave_type || '-'}</span></td>
-                <td style="color: #2980b9;">${safeDate(item.start_date)} <br>ถึง ${safeDate(item.end_date)}</td>
-                <td style="font-weight: bold;">${item.leave_days || item.days || '-'} วัน</td>
-                <td>
-                    <span class="status-badge" style="background:${item.status === 'approved' ? '#28a745' : item.status === 'rejected' ? '#dc3545' : '#f39c12'}; padding: 5px 12px; border-radius: 20px; color: white;">
-                        ${item.status === 'approved' ? 'อนุมัติแล้ว' : item.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอพิจารณา'}
-                    </span>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = recordsToShow.map(item => {
+            let diffDays = '-';
+            if (item.start_date && item.end_date) {
+                const s = new Date(item.start_date);
+                const e = new Date(item.end_date);
+                diffDays = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
+            }
+
+            return `
+                <tr style="border-bottom: 1px solid #eee; text-align: center;">
+                    <td style="color: #7f8c8d; padding: 12px;">${safeDate(item.created_at)}</td>
+                    <td class="col-name" style="text-align: left;">
+                        <strong style="color: #2c3e50;">${item.emp_id || '-'}</strong><br>
+                        ${item.first_name || ''} ${item.last_name || ''}
+                    </td>
+                    <td><span class="badge-type" style="background: #f8f9fa; padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${item.leave_type || '-'}</span></td>
+                    <td style="color: #2980b9;">${safeDate(item.start_date)} <br>ถึง ${safeDate(item.end_date)}</td>
+                    
+                    <td style="font-weight: bold;">${diffDays} วัน</td>
+                    
+                    <td>
+                        <span class="status-badge" style="background:${item.status === 'approved' ? '#28a745' : item.status === 'rejected' ? '#dc3545' : '#f39c12'}; padding: 5px 12px; border-radius: 20px; color: white; font-size: 0.85em;">
+                            ${item.status === 'approved' ? 'อนุมัติแล้ว' : item.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอพิจารณา'}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
         renderAdminPagination(totalPages);
     } catch (error) {
@@ -522,7 +534,7 @@ function switchPage(event, pageId, clickedLink) {
 }
 
 // ==========================================
-// 🚀 9. โหลดข้อมูลตอนเปิดเว็บไซต์ (ครั้งเดียวจบ)
+// 🚀 9. โหลดข้อมูลตอนเปิดเว็บไซต์ & ผูกปุ่มกด
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 Admin Dashboard is Ready!");
@@ -530,7 +542,28 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDepartments();
     loadPendingLeaves();
     fetchAllEmployees();
-    loadSalaryReport(); // จะทำการวาดตารางและกราฟให้เลย
+    loadSalaryReport(); 
     loadAnnouncementsAdmin();
     fetchAndRenderAllLeaveHistory();
+
+    // 🌟 ย้ายการผูกปุ่มสร้างประกาศเข้ามาไว้ในนี้ เพื่อให้ชัวร์ 100% ว่ามันจะหาฟอร์มเจอ!
+    const announceForm = document.getElementById('announcement-form');
+    if(announceForm) {
+        announceForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // ป้องกันเว็บกระตุก/รีโหลด
+
+            const title = document.getElementById('announce-title').value;
+            const content = document.getElementById('announce-content').value;
+
+            try {
+                await axios.post(`${API_URL}/announcements`, { title, content });
+                alert('✅ เผยแพร่ประกาศสำเร็จ!');
+                e.target.reset(); // ล้างช่องกรอก
+                loadAnnouncementsAdmin(); // รีเฟรชตารางฝั่งขวา
+            } catch (error) {
+                console.error('Error adding announcement:', error);
+                alert('❌ ไม่สามารถเผยแพร่ประกาศได้ กรุณาตรวจสอบ Backend');
+            }
+        });
+    }
 });

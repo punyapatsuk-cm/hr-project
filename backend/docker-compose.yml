@@ -8,6 +8,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: hr_attendance_db
+      TZ: Asia/Bangkok
     ports:
       - "3306:3306"
     volumes:

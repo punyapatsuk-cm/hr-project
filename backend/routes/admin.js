@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const db = require('../config/db');
 
 // ==========================================
 // 📋 API: GET /api/admin/leaves/pending (ดึงใบลาที่รออนุมัติทั้งหมด)
@@ -60,7 +60,7 @@ router.get('/salary-report', async (req, res) => {
                 ON e.emp_id = a.emp_id AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ?
             GROUP BY e.emp_id, e.first_name, e.last_name, e.hourly_rate
         `;
-        
+
         // ใส่ parameters เดือนและปีลงไปแทนเครื่องหมาย ? ทั้งหมด 6 ตัว
         const [rows] = await db.query(sql, [month, year, month, year, month, year]);
 
@@ -68,11 +68,11 @@ router.get('/salary-report', async (req, res) => {
         const reportData = rows.map(emp => {
             const rate = parseFloat(emp.hourly_rate) || 0;
             const ot_rate = rate * 1.5; // เรท OT 1.5 เท่า
-            
+
             const regularPay = emp.total_work_hours * rate;
             const otPay = emp.total_ot_hours * ot_rate;
             const totalPay = regularPay + otPay; // รวมรายได้ทั้งหมด
-            
+
             return { ...emp, regularPay, otPay, totalPay };
         });
 
@@ -133,7 +133,7 @@ router.get('/dashboard-stats', async (req, res) => {
             WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())
         `;
         const [results] = await db.query(sql);
-        
+
         // ส่งตัวเลขกลับไปให้หน้าเว็บ (ถ้าไม่มีข้อมูลให้เป็น 0)
         res.status(200).json({
             total: results[0].total || 0,
@@ -189,12 +189,15 @@ router.put('/leaves/update-status', async (req, res) => {
         await db.query(updateLeaveSql, [status, leave_id]);
 
         // 2. ระบบตัดโควตาวันลาอัตโนมัติ (ถ้า HR กด Approve)
+        console.log("รับข้อมูลมาคือ:", { leave_id, emp_id, leave_type, status, days_requested });
         if (status === 'approved' && days_requested > 0) {
             // เช็คประเภทการลาเพื่อไปตัดคอลัมน์ให้ถูก (เติม _remaining ให้หมด)
             let columnToDeduct = '';
-            if (leave_type === 'Sick Leave') columnToDeduct = 'sick_leave_remaining';
-            else if (leave_type === 'Personal Leave') columnToDeduct = 'personal_leave_remaining';
-            else if (leave_type === 'Annual Leave') columnToDeduct = 'annual_leave_remaining';
+
+            // 🌟 แก้ตรงนี้ให้ตรงกับค่าในฐานข้อมูลครับ
+            if (leave_type === 'sick') columnToDeduct = 'sick_leave_remaining';
+            else if (leave_type === 'personal') columnToDeduct = 'personal_leave_remaining';
+            else if (leave_type === 'annual') columnToDeduct = 'annual_leave_remaining';
 
             if (columnToDeduct) {
                 const deductSql = `
@@ -226,14 +229,13 @@ router.put('/leaves/update-status', async (req, res) => {
 // ==========================================
 router.get('/employees/all', async (req, res) => {
     try {
-        // 🌟 เพิ่ม LEFT JOIN ตาราง leave_balances เพื่อดึงโควตาของปีปัจจุบันมาด้วย
         const sql = `
-            SELECT e.*, d.name AS dept_name, 
+            SELECT e.*, d.dept_name AS dept_name, 
                    lb.sick_leave_remaining, 
                    lb.personal_leave_remaining, 
                    lb.annual_leave_remaining
             FROM employees e 
-            LEFT JOIN departments d ON e.dept_id = d.id
+            LEFT JOIN departments d ON e.dept_id = d.dept_id
             LEFT JOIN leave_balances lb ON e.emp_id = lb.emp_id AND lb.year = YEAR(CURDATE())
         `;
         const [results] = await db.query(sql);
@@ -243,7 +245,6 @@ router.get('/employees/all', async (req, res) => {
         res.status(500).json({ message: 'Error' });
     }
 });
-
 // ==========================================
 // ➕ [CREATE] เพิ่มพนักงานใหม่ + สร้างโควตาอัตโนมัติ
 // ==========================================
