@@ -23,20 +23,24 @@
                 </div>
             </div>
 
+
             <ul class="sidebar-menu" id="menu-list">
                 <li><a href="#" class="active" onclick="switchPage(event, 'page-news', this)"><i
                             class="fas fa-bullhorn"></i> ข่าวสาร ประกาศ</a></li>
                 <li><a href="#" onclick="switchPage(event, 'page-profile', this)"><i class="fas fa-user"></i>
                         ข้อมูลส่วนตัว</a></li>
                 <li><a href="#" onclick="switchPage(event, 'page-schedule', this)"><i class="fas fa-table"></i>
-                        ตารางการทำงาน</a></li>
-
+                        ระบบลงเวลาทำงาน</a></li>
                 <li><a href="#" onclick="switchPage(event, 'page-leave', this)"><i
-                            class="fas fa-envelope-open-text"></i>
-                        ขอลางาน</a></li>
-
+                            class="fas fa-envelope-open-text"></i> ขอลางาน</a></li>
                 <li><a href="#" onclick="switchPage(event, 'page-settings', this)"><i class="fas fa-cog"></i>
                         ตั้งค่าระบบ</a></li>
+                <li>
+                    <a href="#" onclick="logout()" style="color: #ff4757; font-weight: bold;">
+                        <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+                    </a>
+                </li>
+            </ul>
             </ul>
         </aside>
 
@@ -46,9 +50,6 @@
                 <div class="topbar-title">ระบบจัดการพนักงาน</div>
                 <div class="topbar-user">
                     <span id="topbar-name">กำลังโหลด...</span>
-                    <button class="btn-logout-icon" onclick="logout()" title="ออกจากระบบ">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
                 </div>
             </header>
 
@@ -70,162 +71,241 @@
 
                 <div id="page-profile" class="page-section" style="display: none;">
                     <h2 class="section-title"><i class="fas fa-user-circle"></i> ข้อมูลส่วนตัวของฉัน</h2>
-                    <div class="card" style="max-width: 600px;">
-                        <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
-                            <i class="fas fa-id-card" style="color: #3498db;"></i> ข้อมูลพื้นฐาน
-                        </h3>
 
-                        <table style="width: 100%; text-align: left; font-size: 1.1em; line-height: 2;">
-                            <tr>
-                                <td style="font-weight: bold; width: 40%; color: #555;">รหัสพนักงาน:</td>
-                                <td id="profile-emp-id" style="color: #007bff; font-weight: bold;">กำลังโหลด...</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; color: #555;">ชื่อ - นามสกุล:</td>
-                                <td id="profile-full-name">กำลังโหลด...</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; color: #555;">แผนก (Department):</td>
-                                <td id="profile-dept">กำลังโหลด...</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; color: #555;">สิทธิ์การใช้งาน:</td>
-                                <td><span id="profile-role" class="badge"
-                                        style="background: #e8f4fd; color: #3498db; border: 1px solid #3498db;">กำลังโหลด...</span>
-                                </td>
-                            </tr>
-                        </table>
+                    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+
+                        <div class="card" style="flex: 1; min-width: 300px;">
+                            <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
+                                <i class="fas fa-id-card" style="color: #3498db;"></i> ข้อมูลพื้นฐาน
+                            </h3>
+                            <table style="width: 100%; text-align: left; font-size: 1.1em; line-height: 2;">
+                                <tr>
+                                    <td style="font-weight: bold; width: 40%; color: #555;">รหัสพนักงาน:</td>
+                                    <td id="profile-emp-id" style="color: #007bff; font-weight: bold;">กำลังโหลด...</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #555;">ชื่อ - นามสกุล:</td>
+                                    <td id="profile-full-name">กำลังโหลด...</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #555;">แผนก:</td>
+                                    <td id="profile-dept">กำลังโหลด...</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #555;">สิทธิ์การใช้งาน:</td>
+                                    <td><span id="profile-role" class="badge"
+                                            style="background: #e8f4fd; color: #3498db; border: 1px solid #3498db;">กำลังโหลด...</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: bold; color: #555;">เรทค่าจ้าง:</td>
+                                    <td id="profile-hourly-rate" style="color: #28a745; font-weight: bold;">กำลังโหลด...
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="card" style="flex: 1; min-width: 300px;">
+                            <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
+                                <i class="fas fa-calendar-check" style="color: #e67e22;"></i> โควตาวันลาคงเหลือ (ปีนี้)
+                            </h3>
+                            <div
+                                style="display: flex; justify-content: space-around; text-align: center; margin-top: 30px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #666;">ลาป่วย</h4>
+                                    <p style="font-size: 2.5em; margin: 10px 0; color: #dc3545; font-weight: bold;">
+                                        <span id="profile-sick">0</span><span style="font-size: 0.4em; color:#999;"> /
+                                            30</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; color: #666;">ลากิจ</h4>
+                                    <p style="font-size: 2.5em; margin: 10px 0; color: #f39c12; font-weight: bold;">
+                                        <span id="profile-personal">0</span><span style="font-size: 0.4em; color:#999;">
+                                            / 6</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; color: #666;">ลาพักร้อน</h4>
+                                    <p style="font-size: 2.5em; margin: 10px 0; color: #28a745; font-weight: bold;">
+                                        <span id="profile-annual">0</span><span style="font-size: 0.4em; color:#999;"> /
+                                            6</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
                 <div id="page-schedule" class="page-section" style="display: none;">
-                    <h2 class="section-title">ระบบลงเวลาทำงาน</h2>
+                    <h2 class="section-title"><i class="fas fa-clock"></i> ระบบลงเวลาทำงาน</h2>
 
-                    <div class="card" style="margin-bottom: 20px;">
-                        <p>📅 วันจันทร์ - ศุกร์ : เข้างาน 09:00 - 18:00 น.</p>
-                        <p>🛋️ วันเสาร์ - อาทิตย์ : วันหยุดพักผ่อน</p>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+
+                        <div class="time-tracker-box" style="flex: 1; min-width: 300px; max-width: 400px;">
+                            <div class="server-time-header">
+                                <i class="fas fa-server"></i> เวลาเซิร์ฟเวอร์
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                                <i class="far fa-calendar-alt" style="font-size: 2em; color: #95a5a6;"></i>
+                                <div>
+                                    <div id="current-date" style="font-weight: bold; color: #34495e;">กำลังโหลดวันที่...
+                                    </div>
+                                    <div id="current-time" class="time-display-large">00:00:00</div>
+                                </div>
+                            </div>
+
+                            <button type="button" id="btn-clock-in" class="btn-check-in">
+                                <i class="fas fa-sign-in-alt"></i> บันทึกเข้างาน
+                            </button>
+                            <button type="button" id="btn-clock-out" class="btn-check-out">
+                                <i class="fas fa-sign-out-alt"></i> บันทึกเลิกงาน
+                            </button>
+
+                            <div id="attendance-status"
+                                style="text-align: center; margin-top: 15px; font-weight: bold; color: #e67e22;">
+                                รอการบันทึกเวลา
+                            </div>
+
+                            <hr style="border:0; border-top: 1px dashed #eee; margin: 25px 0;">
+                            <div style="color: #c0392b; font-weight: bold;"><i class="fas fa-info-circle"></i>
+                                กิจกรรมสำหรับวันนี้</div>
+
+                            <div class="timeline-container">
+                                <div class="timeline-item done">
+                                    <div class="timeline-title">เวลาทำงานปกติ</div>
+                                    <div class="timeline-detail"><i class="far fa-clock"></i> 09:00 - 18:00 น.</div>
+                                    <div class="timeline-detail"><i class="fas fa-utensils"></i> พักเที่ยง 12:00 - 13:00
+                                        น.</div>
+                                </div>
+                                <div class="timeline-item active">
+                                    <div class="timeline-title">สถานะปัจจุบัน</div>
+                                    <div class="timeline-detail" id="timeline-status-text">รอการบันทึกเวลา...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card" style="flex: 2; min-width: 300px;">
+                            <h3 style="margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                                <i class="fas fa-history" style="color: #3498db;"></i> ประวัติการลงเวลา (30 วันล่าสุด)
+                            </h3>
+                            <div style="overflow-x: auto;">
+                                <table
+                                    style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
+                                    <thead>
+                                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                            <th style="padding: 12px;">วันที่</th>
+                                            <th style="padding: 12px; color: #00a86b;">เวลาเข้างาน</th>
+                                            <th style="padding: 12px; color: #e74c3c;">เวลาเลิกงาน</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-table-body">
+                                        <tr>
+                                            <td colspan="3" style="padding: 20px;">กำลังโหลดข้อมูล...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
-
-                    <div class="card" style="text-align: center; padding: 30px;">
-                        <h2>บันทึกเวลาเข้า-ออกงาน</h2>
-                        <h3 id="current-time" style="font-size: 2.5em; margin: 20px 0; color: #007bff;">00:00:00</h3>
-
-                        <button type="button" id="btn-clock-in"
-                            style="background-color: #28a745; color: white; padding: 15px 30px; font-size: 1.2em; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <i class="fas fa-sign-in-alt"></i> เข้างาน
-                        </button>
-
-                        <button type="button" id="btn-clock-out"
-                            style="background-color: #dc3545; color: white; padding: 15px 30px; font-size: 1.2em; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <i class="fas fa-sign-out-alt"></i> เลิกงาน
-                        </button>
-
-                        <p id="attendance-status" style="margin-top: 20px; font-weight: bold; color: #555;">สถานะ:
-                            รอการบันทึกเวลา</p>
-                    </div>
-
-                    <div class="card" style="margin-top: 20px;">
-                        <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> ประวัติการลงเวลา (30 วันล่าสุด)
-                        </h3>
-                        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
-                            <thead>
-                                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <th style="padding: 12px;">วันที่</th>
-                                    <th style="padding: 12px; color: #28a745;">เวลาเข้างาน</th>
-                                    <th style="padding: 12px; color: #dc3545;">เวลาเลิกงาน</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-table-body">
-                                <tr>
-                                    <td colspan="3" style="padding: 20px;">กำลังโหลดข้อมูล...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                 </div>
 
                 <div id="page-leave" class="page-section" style="display: none;">
-                    <h2 class="section-title">ส่งคำขอลางาน</h2>
+                    <h2 class="section-title"><i class="fas fa-envelope-open-text"></i> ระบบขอลางาน</h2>
 
-                    <div class="card" style="max-width: 600px; margin: 0 auto;">
-                        <form id="leave-form">
-                            <div style="margin-bottom: 15px;">
-                                <label
-                                    style="display: block; margin-bottom: 5px; font-weight: bold;">ประเภทการลา:</label>
-                                <select id="leave-type" required
-                                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-                                    <option value="">-- เลือกประเภทการลา --</option>
-                                    <option value="Sick Leave">ลาป่วย</option>
-                                    <option value="Personal Leave">ลากิจ</option>
-                                    <option value="Annual Leave">ลาพักร้อน</option>
-                                </select>
-                            </div>
-                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                <div style="flex: 1;">
-                                    <label
-                                        style="display: block; margin-bottom: 5px; font-weight: bold;">วันที่เริ่มต้น:</label>
-                                    <input type="date" id="leave-start" required
-                                        style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+
+                        <div class="time-tracker-box" style="flex: 1; min-width: 300px; max-width: 400px;">
+                            <h3
+                                style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                                <i class="fas fa-paper-plane" style="color: #3498db;"></i> ส่งคำขอลางาน
+                            </h3>
+
+                            <form id="leave-form">
+                                <div class="leave-form-group">
+                                    <label>ประเภทการลา:</label>
+                                    <select id="leave-type" class="leave-input" required>
+                                        <option value="">-- เลือกประเภทการลา --</option>
+                                        <option value="Sick Leave">ลาป่วย</option>
+                                        <option value="Personal Leave">ลากิจ</option>
+                                        <option value="Annual Leave">ลาพักร้อน</option>
+                                    </select>
                                 </div>
-                                <div style="flex: 1;">
-                                    <label
-                                        style="display: block; margin-bottom: 5px; font-weight: bold;">วันที่สิ้นสุด:</label>
-                                    <input type="date" id="leave-end" required
-                                        style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+
+                                <div style="display: flex; gap: 10px;">
+                                    <div class="leave-form-group" style="flex: 1;">
+                                        <label>วันที่เริ่มต้น:</label>
+                                        <input type="date" id="leave-start" class="leave-input" required>
+                                    </div>
+                                    <div class="leave-form-group" style="flex: 1;">
+                                        <label>วันที่สิ้นสุด:</label>
+                                        <input type="date" id="leave-end" class="leave-input" required>
+                                    </div>
                                 </div>
-                            </div>
-                            <div style="margin-bottom: 15px;">
-                                <label
-                                    style="display: block; margin-bottom: 5px; font-weight: bold;">เหตุผลการลา:</label>
-                                <textarea id="leave-reason" rows="3" required
-                                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
-                            </div>
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">แนบเอกสาร
-                                    (ถ้ามี):</label>
-                                <input type="file" id="leave-attachment" accept="image/*,.pdf" style="width: 100%;">
-                                <small style="color: #666;">รองรับไฟล์รูปภาพ หรือ PDF (เช่น ใบรับรองแพทย์)</small>
-                            </div>
-                            <button type="submit"
-                                style="background-color: #007bff; color: white; padding: 12px 20px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
-                                <i class="fas fa-paper-plane"></i> ส่งคำขอลางาน
-                            </button>
-                        </form>
-                    </div>
 
-                    <div class="card" style="margin-top: 20px;">
-                        <h3 style="margin-bottom: 15px;"><i class="fas fa-list"></i> ประวัติการลางานของฉัน</h3>
-                        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
-                            <thead>
-                                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <th style="padding: 12px;">ประเภทการลา</th>
-                                    <th style="padding: 12px;">วันที่เริ่ม</th>
-                                    <th style="padding: 12px;">วันที่สิ้นสุด</th>
-                                    <th style="padding: 12px;">สถานะ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leave-history-body">
-                                <tr>
-                                    <td colspan="4" style="padding: 20px;">กำลังโหลดข้อมูล...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                                <div class="leave-form-group">
+                                    <label>เหตุผลการลา:</label>
+                                    <textarea id="leave-reason" class="leave-input" rows="3"
+                                        placeholder="ระบุเหตุผลการลา..." required></textarea>
+                                </div>
 
-                </div>
+                                <div class="leave-form-group">
+                                    <label>แนบเอกสาร (ถ้ามี):</label>
+                                    <input type="file" id="leave-attachment" class="leave-input" style="padding: 7px;"
+                                        accept="image/*,.pdf">
+                                    <small style="color: #7f8c8d;">รองรับไฟล์รูปภาพ หรือ PDF (เช่น
+                                        ใบรับรองแพทย์)</small>
+                                </div>
 
-                <div id="page-settings" class="page-section" style="display: none;">
-                    <h2 class="section-title">ตั้งค่าระบบ</h2>
-                    <div class="card">
-                        <h3>เปลี่ยนรหัสผ่าน</h3>
-                        <p>คุณสามารถเปลี่ยนรหัสผ่านใหม่ได้ที่นี่ (รอการพัฒนาต่อ)</p>
-                        <button style="padding: 10px; cursor:pointer;">แก้ไขรหัสผ่าน</button>
+                                <button type="submit" class="btn-submit-leave">
+                                    <i class="fas fa-paper-plane"></i> ยืนยันการขอลางาน
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="card" style="flex: 2; min-width: 300px;">
+                            <h3 style="margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                                <i class="fas fa-list-alt" style="color: #00a86b;"></i> ประวัติการลางานของฉัน
+                            </h3>
+                            <div style="overflow-x: auto;">
+                                <table
+                                    style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
+                                    <thead>
+                                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                            <th style="padding: 12px;">ประเภทการลา</th>
+                                            <th style="padding: 12px;">วันที่เริ่ม</th>
+                                            <th style="padding: 12px;">วันที่สิ้นสุด</th>
+                                            <th style="padding: 12px;">สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leave-history-body">
+                                        <tr>
+                                            <td colspan="4" style="padding: 20px;">กำลังโหลดข้อมูล...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
             </div>
-        </main>
+
+            <div id="page-settings" class="page-section" style="display: none;">
+                <h2 class="section-title">ตั้งค่าระบบ</h2>
+                <div class="card">
+                    <h3>เปลี่ยนรหัสผ่าน</h3>
+                    <p>คุณสามารถเปลี่ยนรหัสผ่านใหม่ได้ที่นี่ (รอการพัฒนาต่อ)</p>
+                    <button style="padding: 10px; cursor:pointer;">แก้ไขรหัสผ่าน</button>
+                </div>
+            </div>
+
+    </div>
+    </main>
     </div>
 
     <script src="home.js"></script>

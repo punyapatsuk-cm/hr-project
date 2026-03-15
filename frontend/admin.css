@@ -1,0 +1,96 @@
+.dashboard-widgets {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.small-box {
+    flex: 1;
+    min-width: 200px;
+    border-radius: 8px;
+    position: relative;
+    padding: 20px;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: 0.3s;
+}
+
+.small-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.small-box .inner {
+    z-index: 2;
+    position: relative;
+}
+
+.small-box h3 {
+    font-size: 2.5em;
+    margin: 0 0 5px 0;
+    font-weight: bold;
+}
+
+.small-box p {
+    font-size: 1.1em;
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* ไอคอนจางๆ พื้นหลัง */
+.small-box .icon {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    z-index: 0;
+    opacity: 0.2;
+    font-size: 5em;
+    transition: transform 0.3s;
+}
+
+.small-box:hover .icon {
+    transform: scale(1.15) rotate(5deg);
+}
+
+/* แถบ More Info ด้านล่าง */
+.small-box-footer {
+    display: block;
+    background: rgba(0, 0, 0, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    padding: 5px 0;
+    text-decoration: none;
+    margin: 20px -20px -20px -20px;
+    font-size: 0.9em;
+    z-index: 2;
+    position: relative;
+}
+
+.small-box-footer:hover {
+    color: #fff;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+/* สีสันของแต่ละกล่อง */
+.bg-info {
+    background-color: #17a2b8;
+}
+
+.bg-warning {
+    background-color: #ffc107;
+    color: #333 !important;
+}
+
+.bg-warning .small-box-footer {
+    color: #333 !important;
+}
+
+.bg-success {
+    background-color: #28a745;
+}
+
+.bg-danger {
+    background-color: #dc3545;
+}

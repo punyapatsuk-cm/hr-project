@@ -24,17 +24,126 @@ router.get('/leaves/pending', async (req, res) => {
 });
 
 // ==========================================
+// 💰 [READ] รายงานสรุปเงินเดือนรายเดือน (รวมประวัติการลา)
+// ==========================================
+router.get('/salary-report', async (req, res) => {
+    try {
+        const month = req.query.month || new Date().getMonth() + 1;
+        const year = req.query.year || new Date().getFullYear();
+
+        // 🌟 SQL ตัวนี้จะดึงทั้งชั่วโมงทำงาน และไปนับจำนวนวันที่ลาป่วย/ลากิจ มาให้ด้วย
+        const sql = `
+            SELECT 
+                e.emp_id, 
+                e.first_name, 
+                e.last_name,
+                e.hourly_rate,
+                IFNULL(SUM(a.work_hours), 0) AS total_work_hours,
+                IFNULL(SUM(a.ot_hours), 0) AS total_ot_hours,
+                
+                -- นับวันลาป่วย (Sick Leave) ที่อนุมัติแล้วในเดือนนี้
+                IFNULL((
+                    SELECT SUM(DATEDIFF(end_date, start_date) + 1) 
+                    FROM leave_requests 
+                    WHERE emp_id = e.emp_id AND leave_type = 'Sick Leave' AND status = 'approved' AND MONTH(start_date) = ? AND YEAR(start_date) = ?
+                ), 0) AS sick_leaves,
+                
+                -- นับวันลากิจ (Personal Leave) ที่อนุมัติแล้วในเดือนนี้
+                IFNULL((
+                    SELECT SUM(DATEDIFF(end_date, start_date) + 1) 
+                    FROM leave_requests 
+                    WHERE emp_id = e.emp_id AND leave_type = 'Personal Leave' AND status = 'approved' AND MONTH(start_date) = ? AND YEAR(start_date) = ?
+                ), 0) AS personal_leaves
+                
+            FROM employees e
+            LEFT JOIN attendance_logs a 
+                ON e.emp_id = a.emp_id AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ?
+            GROUP BY e.emp_id, e.first_name, e.last_name, e.hourly_rate
+        `;
+        
+        // ใส่ parameters เดือนและปีลงไปแทนเครื่องหมาย ? ทั้งหมด 6 ตัว
+        const [rows] = await db.query(sql, [month, year, month, year, month, year]);
+
+        // 🌟 นำข้อมูลมาคำนวณเงิน
+        const reportData = rows.map(emp => {
+            const rate = parseFloat(emp.hourly_rate) || 0;
+            const ot_rate = rate * 1.5; // เรท OT 1.5 เท่า
+            
+            const regularPay = emp.total_work_hours * rate;
+            const otPay = emp.total_ot_hours * ot_rate;
+            const totalPay = regularPay + otPay; // รวมรายได้ทั้งหมด
+            
+            return { ...emp, regularPay, otPay, totalPay };
+        });
+
+        res.status(200).json(reportData);
+    } catch (error) {
+        console.error("Salary Report Error:", error);
+        res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงรายงานเงินเดือน' });
+    }
+});
+
+// ==========================================
 // 🏢 [READ] ดึงข้อมูลแผนกทั้งหมด
 // ==========================================
 // ต้องมี API ตัวนี้เพื่อส่งรายชื่อแผนกให้หน้าเว็บ
 router.get('/departments', async (req, res) => {
     try {
         const [results] = await db.query("SELECT * FROM departments");
-        console.log("Departments found:", results); // บรรทัดนี้จะช่วยให้คุณเห็นใน Terminal ว่าข้อมูลมาไหม
+        //console.log("Departments found:", results);
         res.status(200).json(results);
     } catch (error) {
         console.error("Database Error:", error);
         res.status(500).json({ message: 'Error fetching departments' });
+    }
+});
+
+
+
+// ตัวอย่าง API ใน routes/admin.js
+router.get('/dashboard-stats', async (req, res) => {
+    try {
+        const [stats] = await db.query(`
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+                SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+            FROM leave_requests
+        `);
+        res.json(stats[0]);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// ==========================================
+// 📊 [READ] ดึงสถิติใบลาสำหรับ Dashboard (เดือนปัจจุบัน)
+// ==========================================
+router.get('/dashboard-stats', async (req, res) => {
+    try {
+        // คำสั่ง SQL นี้นับจำนวนใบลาแยกตามสถานะ ของเดือนนี้
+        const sql = `
+            SELECT 
+                COUNT(*) AS total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
+                SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+            FROM leave_requests
+            WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())
+        `;
+        const [results] = await db.query(sql);
+        
+        // ส่งตัวเลขกลับไปให้หน้าเว็บ (ถ้าไม่มีข้อมูลให้เป็น 0)
+        res.status(200).json({
+            total: results[0].total || 0,
+            pending: results[0].pending || 0,
+            approved: results[0].approved || 0,
+            rejected: results[0].rejected || 0
+        });
+    } catch (error) {
+        console.error('Stats Error:', error);
+        res.status(500).json({ message: 'Error fetching stats' });
     }
 });
 
@@ -53,13 +162,13 @@ router.put('/employees/:id', async (req, res) => {
             SET first_name = ?, last_name = ?, role = ?, dept_id = ?, hourly_rate = ? 
             WHERE emp_id = ?
         `;
-        
+
         await db.query(sql, [first_name, last_name, role, final_dept_id, final_hourly_rate, id]);
 
         res.status(200).json({ message: 'แก้ไขข้อมูลสำเร็จ' });
     } catch (error) {
         // 💡 ถ้าล้มเหลว ให้ดู Error ในหน้า Terminal (จอดำ) ของพี่ได้เลยครับ
-        console.error("❌ Update Error:", error); 
+        console.error("❌ Update Error:", error);
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล' });
     }
 });
@@ -110,20 +219,27 @@ router.put('/leaves/update-status', async (req, res) => {
     }
 });
 
+
+
 // ==========================================
-// [READ] ดึงรายชื่อพนักงานทั้งหมด (รวมชื่อแผนก)
+// [READ] ดึงรายชื่อพนักงานทั้งหมด (รวมชื่อแผนก และ โควตาวันลา)
 // ==========================================
-// ใน routes/admin.js หา API employees/all แล้วแก้ SQL ครับ
 router.get('/employees/all', async (req, res) => {
     try {
+        // 🌟 เพิ่ม LEFT JOIN ตาราง leave_balances เพื่อดึงโควตาของปีปัจจุบันมาด้วย
         const sql = `
-            SELECT e.*, d.name AS dept_name 
+            SELECT e.*, d.name AS dept_name, 
+                   lb.sick_leave_remaining, 
+                   lb.personal_leave_remaining, 
+                   lb.annual_leave_remaining
             FROM employees e 
             LEFT JOIN departments d ON e.dept_id = d.id
+            LEFT JOIN leave_balances lb ON e.emp_id = lb.emp_id AND lb.year = YEAR(CURDATE())
         `;
         const [results] = await db.query(sql);
         res.status(200).json(results);
     } catch (error) {
+        console.error("Fetch Employees Error:", error);
         res.status(500).json({ message: 'Error' });
     }
 });
@@ -132,35 +248,31 @@ router.get('/employees/all', async (req, res) => {
 // ➕ [CREATE] เพิ่มพนักงานใหม่ + สร้างโควตาอัตโนมัติ
 // ==========================================
 router.post('/employees/add', async (req, res) => {
-    // 1. รับค่าที่ส่งมา (ไม่มี username แล้ว)
-    const { emp_id, first_name, last_name, password, role } = req.body;
+    // 🌟 1. รับค่า hourly_rate ที่ส่งมาจากหน้าเว็บเพิ่มด้วย
+    const { emp_id, first_name, last_name, password, role, hourly_rate } = req.body;
 
     try {
-        // 2. เช็คว่า ID ซ้ำไหม
         const [check] = await db.query("SELECT emp_id FROM employees WHERE emp_id = ?", [emp_id]);
         if (check.length > 0) return res.status(400).json({ message: 'รหัสพนักงานนี้มีในระบบแล้ว' });
 
-        // 3. บันทึกลงตาราง employees (ใส่ dept_id=1 ไปก่อนตามโครงสร้างเดิมของคุณ)
-        // สังเกตว่าเราไม่ใส่คอลัมน์ username แล้วครับ
-        const sql = "INSERT INTO employees (emp_id, first_name, last_name, password, role, dept_id) VALUES (?, ?, ?, ?, ?, ?)";
-        await db.query(sql, [emp_id, first_name, last_name, password, role, 1]);
+        // 🌟 แปลงค่าจ้างเป็นตัวเลข
+        const final_hourly_rate = hourly_rate ? parseFloat(hourly_rate) : 0.00;
 
-        // 4. สร้างโควตาวันลา (ใช้ชื่อคอลัมน์ตามรูป image_05fc1d.png)
-        // ดึงค่าปีปัจจุบัน (เช่น 2026)
+        // 🌟 2. เพิ่ม hourly_rate เข้าไปในคำสั่ง INSERT
+        const sql = "INSERT INTO employees (emp_id, first_name, last_name, password, role, dept_id, hourly_rate) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        // ใส่ 1 เป็นค่า dept_id ตั้งต้นตามโครงสร้างเดิมของพี่
+        await db.query(sql, [emp_id, first_name, last_name, password, role, 1, final_hourly_rate]);
+
+        // โค้ดส่วนสร้างโควตาวันลาเหมือนเดิม...
         const currentYear = new Date().getFullYear();
-
-        // สร้างโควตาของ "ปีนั้น" ให้พนักงาน
-        const balanceSql = `
-    INSERT INTO leave_balances (emp_id, year, sick_leave_remaining, personal_leave_remaining, annual_leave_remaining) 
-    VALUES (?, ?, ?, ?, ?)
-`;
+        const balanceSql = `INSERT INTO leave_balances (emp_id, year, sick_leave_remaining, personal_leave_remaining, annual_leave_remaining) VALUES (?, ?, ?, ?, ?)`;
         await db.query(balanceSql, [emp_id, currentYear, 30, 6, 6]);
 
         res.status(201).json({ message: 'เพิ่มพนักงานและสร้างโควตาวันลาสำเร็จ' });
 
     } catch (error) {
         console.error('SQL ERROR:', error);
-        // ถ้ายังพัง มันจะบอกสาเหตุที่แท้จริงกลับมาให้เราเห็นเลยครับ
         res.status(500).json({ message: 'เกิดข้อผิดพลาด: ' + error.sqlMessage });
     }
 });
@@ -190,10 +302,10 @@ router.post('/announcements', async (req, res) => {
         if (!title || !content) {
             return res.status(400).json({ message: 'กรุณากรอกหัวข้อและเนื้อหาให้ครบถ้วน' });
         }
-        
+
         const sql = "INSERT INTO announcements (title, content) VALUES (?, ?)";
         await db.query(sql, [title, content]);
-        
+
         res.status(201).json({ message: 'สร้างประกาศสำเร็จเรียบร้อย' });
     } catch (error) {
         console.error('Create Announcement Error:', error);
@@ -224,11 +336,32 @@ router.delete('/announcements/:id', async (req, res) => {
         const { id } = req.params;
         const sql = "DELETE FROM announcements WHERE id = ?";
         await db.query(sql, [id]);
-        
+
         res.status(200).json({ message: 'ลบประกาศสำเร็จ' });
     } catch (error) {
         console.error('Delete Announcement Error:', error);
         res.status(500).json({ message: 'เกิดข้อผิดพลาดในการลบประกาศ' });
+    }
+});
+
+// ==========================================
+// 🕒 [READ] API: GET /api/admin/leave-history (ดึงประวัติการลาทั้งหมด)
+// ==========================================
+router.get('/leave-history', async (req, res) => {
+    try {
+        // 🌟 เพิ่มคำสั่ง DATEDIFF เพื่อให้ SQL คำนวณจำนวนวันให้เลย
+        const sql = `
+            SELECT l.*, e.first_name, e.last_name,
+                   (DATEDIFF(l.end_date, l.start_date) + 1) AS days_requested
+            FROM leave_requests l
+            JOIN employees e ON l.emp_id = e.emp_id
+            ORDER BY l.created_at DESC
+        `;
+        const [results] = await db.query(sql);
+        res.status(200).json(results);
+    } catch (error) {
+        console.error('Admin Fetch Leave History Error:', error);
+        res.status(500).json({ message: 'ไม่สามารถดึงข้อมูลประวัติการลางานได้' });
     }
 });
 

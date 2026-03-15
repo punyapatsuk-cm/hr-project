@@ -23,16 +23,18 @@ app.use('/api/admin', require('./routes/admin')); // หมวดจัดกา
 // ==========================================
 // 🧑‍💼 3. API ข้อมูลพนักงาน (Employee)
 // ==========================================
-// [READ] ดึงข้อมูลส่วนตัวและแผนกของพนักงาน
-// ใน server.js หาช่อง API Profile แล้วแก้ SQL เป็นแบบนี้ครับ
 app.get('/api/employee/profile/:emp_id', async (req, res) => {
     try {
         const { emp_id } = req.params;
-        // 🌟 แก้ SQL ให้ไปดึงชื่อแผนก (dept_name) มาด้วย
+        // 🌟 เพิ่ม LEFT JOIN เพื่อดึงโควตาวันลาปีปัจจุบันมาด้วย
         const sql = `
-            SELECT e.*, d.name AS dept_name 
+            SELECT e.*, d.name AS dept_name,
+                   lb.sick_leave_remaining,
+                   lb.personal_leave_remaining,
+                   lb.annual_leave_remaining
             FROM employees e 
             LEFT JOIN departments d ON e.dept_id = d.id 
+            LEFT JOIN leave_balances lb ON e.emp_id = lb.emp_id AND lb.year = YEAR(CURDATE())
             WHERE e.emp_id = ?
         `;
         const [results] = await db.query(sql, [emp_id]);
@@ -52,14 +54,51 @@ app.post('/api/attendance/clock-in', async (req, res) => {
         const { emp_id } = req.body;
         if (!emp_id) return res.status(400).json({ message: 'ไม่พบรหัสพนักงาน' });
 
-        const insertSql = "INSERT INTO attendance_logs (emp_id, work_date, check_in_time) VALUES (?, CURDATE(), NOW())";
-        await db.query(insertSql, [emp_id]);
+        // 🌟 1. ดักเช็คก่อนว่า "วันนี้" มีประวัติเข้างานที่ยังไม่ได้เลิกงานหรือไม่?
+        const checkSql = `SELECT * FROM attendance_logs WHERE emp_id = ? AND work_date = CURDATE() AND check_out_time IS NULL`;
+        const [existing] = await db.query(checkSql, [emp_id]);
+
+        if (existing.length > 0) {
+            // ถ้ามีอยู่แล้ว ให้เด้งเตือนและหยุดการทำงาน
+            return res.status(400).json({ message: 'คุณได้บันทึกเข้างานไปแล้ว กรุณากดเลิกงานก่อนครับ' });
+        }
+
+        // 🌟 2. ถ้ายังไม่เคยเข้างานวันนี้ ค่อยบันทึกใหม่
+        const checkInTime = new Date(); // 🌟 ดึงเวลาปัจจุบันจาก Server
+        const insertSql = "INSERT INTO attendance_logs (emp_id, work_date, check_in_time) VALUES (?, CURDATE(), ?)";
+        await db.query(insertSql, [emp_id, checkInTime]); // 🌟 ยัดเวลาใส่เข้าไปแทน NOW()
+
         res.status(200).json({ message: 'บันทึกเวลาเข้างานสำเร็จ!' });
     } catch (error) {
         console.error("Database Error (Clock In):", error);
         res.status(500).json({ message: 'เกิดข้อผิดพลาดที่ฐานข้อมูล' });
     }
 });
+
+
+
+// [READ] ดึงตัวเลขสถิติ Dashboard
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                COUNT(*) AS total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
+                SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+            FROM leave_requests
+            WHERE MONTH(created_at) = MONTH(CURDATE()) 
+              AND YEAR(created_at) = YEAR(CURDATE())
+        `;
+        const [results] = await db.query(sql);
+        res.status(200).json(results[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching stats' });
+    }
+});
+
+
+
 
 // [UPDATE] บันทึกเวลาเลิกงาน (Clock Out) + คำนวณชั่วโมงและค่าแรง
 app.post('/api/attendance/clock-out', async (req, res) => {
