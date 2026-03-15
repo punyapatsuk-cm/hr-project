@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const db = require('../config/db');
 const jwt = require('jsonwebtoken');
 
@@ -14,9 +15,9 @@ exports.login = async (req, res) => {
         if (users.length === 0) {
             return res.status(401).json({ message: 'ไม่พบรหัสพนักงานนี้ในระบบ' });
         }
-
         const user = users[0];
 
+        const isMatch = await bcrypt.compare(password, user.password);
         if (password !== user.password) {
             return res.status(401).json({ message: 'รหัสผ่านไม่ถูกต้อง' });
         }

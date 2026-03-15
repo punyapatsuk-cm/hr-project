@@ -427,3 +427,221 @@ body {
     font-weight: normal;
     /* ตัวส่วนไม่ต้องหนา */
 }
+/* ============================================
+   🗒️ New Leave Form Card Design
+   ============================================ */
+.leave-form-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e8ecf0;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.leave-form-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.leave-form-header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #e8f4fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #185FA5;
+    font-size: 1em;
+    flex-shrink: 0;
+}
+
+.leave-form-title {
+    font-size: 1em;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.leave-form-subtitle {
+    font-size: 0.78em;
+    color: #95a5a6;
+    margin-top: 2px;
+}
+
+.leave-form-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.lf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.lf-label {
+    font-size: 0.78em;
+    font-weight: 700;
+    color: #7f8c8d;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.lf-input {
+    background: #f8f9fa;
+    border: 1px solid #e0e4e8;
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 0.93em;
+    font-family: inherit;
+    color: #2c3e50;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.lf-input:focus {
+    outline: none;
+    border-color: #378ADD;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+}
+
+.lf-textarea {
+    resize: vertical;
+    min-height: 85px;
+    line-height: 1.6;
+}
+
+.lf-date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Pill buttons สำหรับประเภทการลา */
+.lf-pill-group {
+    display: flex;
+    gap: 8px;
+}
+
+.lf-pill {
+    flex: 1;
+    border: 1px solid #e0e4e8;
+    border-radius: 9px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-family: inherit;
+    background: #f8f9fa;
+    color: #7f8c8d;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.lf-pill:hover {
+    border-color: #378ADD;
+    color: #185FA5;
+    background: #eef6fd;
+}
+
+.lf-pill.selected {
+    background: #e8f4fd;
+    border-color: #378ADD;
+    color: #0C447C;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px rgba(55,138,221,0.15);
+}
+
+.lf-pill-icon {
+    font-size: 1.3em;
+    line-height: 1;
+}
+
+/* File upload area */
+.lf-file-area {
+    border: 1.5px dashed #c8d1da;
+    border-radius: 9px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+}
+
+.lf-file-area:hover {
+    border-color: #378ADD;
+    background: #f0f7ff;
+}
+
+.lf-file-area input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.lf-file-icon {
+    font-size: 1.8em;
+    color: #b0bec5;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.lf-file-text {
+    font-size: 0.88em;
+    color: #7f8c8d;
+    margin: 0;
+}
+
+.lf-file-hint {
+    font-size: 0.75em;
+    color: #b0bec5;
+    margin: 5px 0 0;
+}
+
+.lf-divider {
+    border: none;
+    border-top: 1px solid #f0f2f5;
+    margin: 4px 0 0;
+}
+
+.lf-submit-btn {
+    width: 100%;
+    padding: 13px;
+    background: #185FA5;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 1em;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+    box-shadow: 0 4px 12px rgba(24,95,165,0.25);
+}
+
+.lf-submit-btn:hover {
+    background: #0C447C;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(24,95,165,0.3);
+}
+
+.lf-submit-btn:active {
+    transform: scale(0.98);
+}

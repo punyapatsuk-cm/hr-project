@@ -6,6 +6,7 @@ const empId = localStorage.getItem('employeeId');
 
 // ถ้าไม่มีข้อมูลใน LocalStorage ให้เด้งกลับไปหน้า Login
 if (!name || !empId) {
+    alert('กรุณาเข้าสู่ระบบก่อน');
     window.location.href = 'login.html';
 } else {
     // แสดงชื่อผู้ใช้บน UI
@@ -75,6 +76,28 @@ function updateClock() {
     }
 }
 
+// อัปเดต timeline สถานะปัจจุบัน
+function updateTimelineStatus(state) {
+    const timelineText = document.getElementById('timeline-status-text');
+    const statusEl     = document.getElementById('attendance-status');
+    if (!timelineText) return;
+
+    const now = new Date().toLocaleTimeString('th-TH', { hour12: false });
+
+    if (state === 'in') {
+        timelineText.innerHTML = `<span style="color:#00a86b; font-weight:bold;">✅ กำลังทำงานอยู่</span><br>
+            <span style="font-size:0.85em; color:#7f8c8d;">เข้างานเมื่อ ${now}</span>`;
+        if (statusEl) { statusEl.innerText = 'สถานะ: ✅ บันทึกเข้างานสำเร็จ'; statusEl.style.color = 'green'; }
+    } else if (state === 'out') {
+        timelineText.innerHTML = `<span style="color:#e74c3c; font-weight:bold;">🏃 เลิกงานแล้ว</span><br>
+            <span style="font-size:0.85em; color:#7f8c8d;">ออกงานเมื่อ ${now}</span>`;
+        if (statusEl) { statusEl.innerText = 'สถานะ: ✅ บันทึกเลิกงานสำเร็จ'; statusEl.style.color = '#e74c3c'; }
+    } else {
+        timelineText.innerText = 'รอการบันทึกเวลา...';
+        if (statusEl) { statusEl.innerText = 'รอการบันทึกเวลา'; statusEl.style.color = '#e67e22'; }
+    }
+}
+
 document.getElementById('btn-clock-in')?.addEventListener('click', async function (event) {
     event.preventDefault();
     const statusEl = document.getElementById('attendance-status');
@@ -83,10 +106,9 @@ document.getElementById('btn-clock-in')?.addEventListener('click', async functio
 
     try {
         const response = await axios.post('http://localhost:1304/api/attendance/clock-in', { emp_id: empId });
-        statusEl.innerText = 'สถานะ: ✅ ' + response.data.message;
-        statusEl.style.color = 'green';
+        updateTimelineStatus('in');
         alert('✅ ' + response.data.message);
-        loadAttendanceHistory(); 
+        loadAttendanceHistory();
     } catch (error) {
         const errorMsg = error.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
         statusEl.innerText = 'สถานะ: ❌ ' + errorMsg;
@@ -101,8 +123,9 @@ document.getElementById('btn-clock-out')?.addEventListener('click', async functi
 
     try {
         const response = await axios.post('http://localhost:1304/api/attendance/clock-out', { emp_id: empId });
+        updateTimelineStatus('out');
         alert('✅ ' + response.data.message);
-        loadAttendanceHistory(); 
+        loadAttendanceHistory();
     } catch (error) {
         alert('❌ ' + (error.response?.data?.message || "ผิดพลาด"));
     }
@@ -116,27 +139,79 @@ async function loadAttendanceHistory() {
         tbody.innerHTML = '';
 
         if (response.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px;">ยังไม่มีประวัติการลงเวลา</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px;">ยังไม่มีประวัติการลงเวลา</td></tr>';
+            updateTodaySummary(0, 0);
             return;
         }
 
+        // คำนวณชั่วโมงรวมของวันนี้
+        const todayStr = new Date().toLocaleDateString('th-TH');
+        let todayWork = 0, todayOT = 0;
+
         response.data.forEach(record => {
-            const dateStr = record.work_date ? new Date(record.work_date).toLocaleDateString('th-TH') : '-';
-            const inTime = record.check_in_time ? new Date(record.check_in_time).toLocaleTimeString('th-TH', { hour12: false }) : '-';
-            const outTime = record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('th-TH', { hour12: false }) : 'ยังไม่เลิกงาน';
+            const dateStr  = record.work_date      ? new Date(record.work_date).toLocaleDateString('th-TH') : '-';
+            const inTime   = record.check_in_time  ? new Date(record.check_in_time).toLocaleTimeString('th-TH', { hour12: false }) : '-';
+            const outTime  = record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('th-TH', { hour12: false }) : 'ยังไม่เลิกงาน';
+            const workHrs  = record.work_hours != null ? `${record.work_hours} ชม.` : '-';
+            const otHrs    = record.ot_hours != null && record.ot_hours > 0 ? `${record.ot_hours} ชม.` : '-';
+
+            if (dateStr === todayStr) {
+                todayWork += parseFloat(record.work_hours) || 0;
+                todayOT   += parseFloat(record.ot_hours)   || 0;
+            }
 
             tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #dee2e6;">
-                    <td style="padding: 12px; font-weight: bold;">${dateStr}</td>
-                    <td style="padding: 12px; color: #28a745;">${inTime}</td>
-                    <td style="padding: 12px; color: #dc3545;">${outTime}</td>
+                <tr>
+                    <td style="text-align:center; font-weight:600;">${dateStr}</td>
+                    <td style="text-align:center; color:var(--green); font-weight:600;">${inTime}</td>
+                    <td style="text-align:center; color:${record.check_out_time ? '#e74c3c' : '#e67e22'}; font-weight:600;">${outTime}</td>
+                    <td style="text-align:center; color:#3498db; font-weight:600;">${workHrs}</td>
+                    <td style="text-align:center; color:#e67e22; font-weight:600;">${otHrs}</td>
                 </tr>
             `;
         });
+
+        updateTodaySummary(todayWork, todayOT);
     } catch (error) {
         const tbody = document.getElementById('history-table-body');
-        if(tbody) tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; color: red;">ไม่สามารถโหลดประวัติได้</td></tr>';
+        if(tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; color: red;">ไม่สามารถโหลดประวัติได้</td></tr>';
     }
+}
+
+function updateTodaySummary(workHours, otHours) {
+    const summaryEl = document.getElementById('today-work-summary');
+    if (!summaryEl) return;
+
+    const totalHours = workHours + otHours;
+    const percent    = Math.min((workHours / 8) * 100, 100).toFixed(0);
+    const barColor   = workHours >= 8 ? '#27ae60' : workHours >= 4 ? '#f39c12' : '#e74c3c';
+
+    summaryEl.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px 18px 0;">
+            <div style="background:var(--green-light); border-radius:var(--radius-sm); padding:14px 16px; text-align:center; border:1px solid #a9dfbf;">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--green-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">ชม. ทำงานปกติ</div>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--green);">${workHours.toFixed(2)}</div>
+                <div style="font-size:0.72rem; color:var(--text-light); margin-top:2px;">ชั่วโมง</div>
+            </div>
+            <div style="background:#fef9e7; border-radius:var(--radius-sm); padding:14px 16px; text-align:center; border:1px solid #f9e79f;">
+                <div style="font-size:0.72rem; font-weight:700; color:#a04000; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">ชม. OT</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#e67e22;">${otHours.toFixed(2)}</div>
+                <div style="font-size:0.72rem; color:var(--text-light); margin-top:2px;">ชั่วโมง</div>
+            </div>
+            <div style="background:#eaf4fb; border-radius:var(--radius-sm); padding:14px 16px; text-align:center; border:1px solid #aed6f1;">
+                <div style="font-size:0.72rem; font-weight:700; color:#1a5276; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">รวมทั้งหมด</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#2980b9;">${totalHours.toFixed(2)}</div>
+                <div style="font-size:0.72rem; color:var(--text-light); margin-top:2px;">ชั่วโมง</div>
+            </div>
+        </div>
+        <div style="padding:12px 18px 0;">
+            <div style="font-size:0.75rem; color:var(--text-mid); font-weight:600; margin-bottom:6px;">ความคืบหน้าวันนี้ (เป้าหมาย 8 ชม.)</div>
+            <div style="background:#eef0f3; border-radius:10px; height:8px; overflow:hidden;">
+                <div style="width:${percent}%; background:${barColor}; height:100%; border-radius:10px; transition:width 0.6s ease;"></div>
+            </div>
+            <div style="text-align:right; font-size:0.75rem; font-weight:700; color:${barColor}; margin-top:4px;">${percent}%</div>
+        </div>
+    `;
 }
 
 // ==========================================
@@ -226,16 +301,16 @@ function renderLeaveTable() {
         let typeName = record.leave_type === 'Sick Leave' ? 'ลาป่วย' : record.leave_type === 'Personal Leave' ? 'ลากิจ' : 'ลาพักร้อน';
 
         let statusBadge = '';
-        if (record.status === 'pending') statusBadge = '<span style="background-color: #ffc107; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 0.85em;">รอพิจารณา</span>';
-        else if (record.status === 'approved') statusBadge = '<span style="background-color: #28a745; color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 0.85em;">อนุมัติแล้ว</span>';
-        else statusBadge = '<span style="background-color: #dc3545; color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 0.85em;">ไม่อนุมัติ</span>';
+        if (record.status === 'pending') statusBadge = '<span class="badge badge-pending">รอพิจารณา</span>';
+        else if (record.status === 'approved') statusBadge = '<span class="badge badge-approved">อนุมัติแล้ว</span>';
+        else statusBadge = '<span class="badge badge-rejected">ไม่อนุมัติ</span>';
 
         tbody.innerHTML += `
-            <tr style="border-bottom: 1px solid #dee2e6;">
-                <td style="padding: 12px; font-weight: bold;">${typeName}</td>
-                <td style="padding: 12px;">${startStr}</td>
-                <td style="padding: 12px;">${endStr}</td>
-                <td style="padding: 12px;">${statusBadge}</td>
+            <tr>
+                <td style="text-align:center; font-weight:600;">${typeName}</td>
+                <td style="text-align:center; color:var(--text-mid);">${startStr}</td>
+                <td style="text-align:center; color:var(--text-mid);">${endStr}</td>
+                <td style="text-align:center;">${statusBadge}</td>
             </tr>
         `;
     });
@@ -297,15 +372,14 @@ async function loadAnnouncements() {
             });
 
             container.innerHTML += `
-                <div class="card" style="border-left: 5px solid #e67e22; margin-bottom: 15px; animation: fadeIn 0.5s ease;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <h3 style="color: #d35400; margin-top: 0;">${item.title}</h3>
-                        <span class="badge" style="background: #fff3e0; color: #e67e22; border: 1px solid #e67e22;">
+                <div class="announce-item">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px;">
+                        <div class="announce-item-title">${item.title}</div>
+                        <span style="background:#fff3cd; color:#9c6000; font-size:0.7rem; font-weight:600; padding:3px 10px; border-radius:20px; white-space:nowrap; flex-shrink:0;">
                             <i class="far fa-calendar-alt"></i> ${dateStr}
                         </span>
                     </div>
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-                    <p style="line-height: 1.6; color: #444; white-space: pre-line;">${item.content}</p>
+                    <div class="announce-item-body" style="white-space:pre-line;">${item.content}</div>
                 </div>
             `;
         });
@@ -378,19 +452,22 @@ async function loadEmployeeDashboard() {
         } else {
             const recentLeaves = myLeaves.slice(0, 3);
             tbody.innerHTML = recentLeaves.map(leave => {
-                let statusColor = leave.status === 'approved' ? '#28a745' : leave.status === 'rejected' ? '#dc3545' : '#f39c12';
-                let statusText = leave.status === 'approved' ? 'อนุมัติแล้ว' : leave.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอพิจารณา';
                 let typeName = leave.leave_type === 'Sick Leave' ? 'ลาป่วย' : leave.leave_type === 'Personal Leave' ? 'ลากิจ' : 'ลาพักร้อน';
-                
                 const startDate = new Date(leave.start_date).toLocaleDateString('th-TH');
                 const endDate = new Date(leave.end_date).toLocaleDateString('th-TH');
-                const dateShow = startDate === endDate ? startDate : `${startDate} ถึง ${endDate}`;
+                const dateShow = startDate === endDate ? startDate : `${startDate} – ${endDate}`;
+
+                let statusBadge = leave.status === 'approved'
+                    ? '<span class="badge badge-approved">อนุมัติแล้ว</span>'
+                    : leave.status === 'rejected'
+                    ? '<span class="badge badge-rejected">ไม่อนุมัติ</span>'
+                    : '<span class="badge badge-pending">รอพิจารณา</span>';
 
                 return `
-                    <tr style="border-bottom: 1px solid #f9f9f9;">
-                        <td style="padding: 12px; font-weight: bold; color: #2c3e50;">${typeName}</td>
-                        <td style="color: #3498db;">${dateShow}</td>
-                        <td><span style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;">${statusText}</span></td>
+                    <tr>
+                        <td style="font-weight:700; color:var(--text-dark);">${typeName}</td>
+                        <td style="text-align:center; color:var(--text-mid); font-size:0.84rem;">${dateShow}</td>
+                        <td style="text-align:center;">${statusBadge}</td>
                     </tr>
                 `;
             }).join('');
@@ -450,5 +527,20 @@ async function loadEmployeeDashboard() {
         }
     } catch (error) {
         console.error('โหลดข้อมูล Dashboard พนักงานพลาด:', error);
+    }
+}
+// ฟังก์ชันสำหรับ Leave Form ใหม่
+function selectLeavePill(el, val) {
+    document.querySelectorAll('.lf-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('leave-type').value = val;
+}
+
+function handleLeaveFile(input) {
+    const textEl = document.getElementById('lf-file-text');
+    if (input.files && input.files[0]) {
+        textEl.textContent = '📎 ' + input.files[0].name;
+        textEl.style.color = '#185FA5';
+        textEl.style.fontWeight = 'bold';
     }
 }

@@ -1,38 +1,59 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ลงทะเบียนพนักงาน</title>
+    <title>ระบบจัดการพนักงาน</title>
     <link rel="stylesheet" href="login-cs.css">
 </head>
-
 <body>
 
-    <div class="form-container">
-        <h2>กรอกรหัสพนักงาน</h2>
+    <!-- หน้าแรก Welcome -->
+    <div id="welcome-screen">
+        <h1 class="system-title">Employee System</h1>
+        <p class="system-subtitle">ระบบจัดการพนักงาน</p>
+        <button class="enter-button" onclick="showLogin()">เข้าสู่ระบบบันทึกเวลา</button>
+    </div>
 
-        <form id="login-form">
-            <div class="input-group">
-                <label for="emp-id">รหัสพนักงาน (ID)</label>
-                <input type="text" id="emp-id" name="emp-id" placeholder="เช่น 672165" required>
-            </div>
-
-            <div class="input-group">
-                <label for="password">รหัสผ่าน</label> <input type="password" id="password" name="password"
-                    placeholder="รหัสผ่าน" required>
-            </div>
-
-            <button type="submit" class="btn-submit">เข้าสู่ระบบ</button>
-        </form>
-
-        <div style="text-align: center; margin-top: 1rem;">
-            <a href="frontweb.html" style="color: #666; text-decoration: none; font-size: 0.8rem;">← ย้อนกลับหน้าแรก</a>
+    <!-- หน้า Login Form -->
+    <div id="login-screen">
+        <div class="form-container">
+            <h2>กรอกรหัสพนักงาน</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="emp-id">รหัสพนักงาน (ID)</label>
+                    <input type="text" id="emp-id" name="emp-id" placeholder="เช่น ADMIN00" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">รหัสผ่าน</label>
+                    <input type="password" id="password" name="password" placeholder="รหัสผ่าน" required>
+                </div>
+                <button type="submit" class="btn-submit">เข้าสู่ระบบ</button>
+            </form>
+            <a class="back-link" onclick="showWelcome()">← ย้อนกลับหน้าแรก</a>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios@1.13.2/dist/axios.min.js"></script>
     <script src="script.js"></script>
-</body>
+    <script>
+        function showLogin() {
+            const welcome = document.getElementById('welcome-screen');
+            const login   = document.getElementById('login-screen');
+            welcome.style.opacity = '0';
+            setTimeout(() => {
+                welcome.style.display = 'none';
+                login.style.display   = 'block';
+            }, 300);
+        }
 
+        function showWelcome() {
+            const welcome = document.getElementById('welcome-screen');
+            const login   = document.getElementById('login-screen');
+            login.style.display   = 'none';
+            welcome.style.display = 'block';
+            welcome.style.opacity = '1';
+        }
+    </script>
+</body>
 </html>

@@ -1,3 +1,11 @@
+const empId = localStorage.getItem('employeeId');
+const role = localStorage.getItem('userRole');
+
+if (!empId || role !== 'admin') {
+    alert('❌ คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+    window.location.href = 'login.html';
+}
+
 // 🌟 1. แก้ไข URL ให้ตรงกับหลังบ้าน (เพิ่ม /admin)
 const API_URL = 'http://localhost:1304/api/admin';
 
@@ -33,7 +41,7 @@ async function loadPendingLeaves() {
         const tbody = document.getElementById('admin-leave-table-body');
         if (!tbody) return;
 
-        tbody.innerHTML = ''; 
+        tbody.innerHTML = '';
 
         if (response.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; color: green; text-align: center;">🎉 ไม่มีรายการรอดำเนินการ</td></tr>';
@@ -90,10 +98,7 @@ async function handleLeaveAction(leaveId, empId, leaveType, status, days) {
     try {
         const payload = {
             leave_id: leaveId,
-            emp_id: empId,
-            leave_type: leaveType,
-            status: status,
-            days_requested: days
+            status: status
         };
 
         const res = await axios.put(`${API_URL}/leaves/update-status`, payload);
@@ -146,29 +151,33 @@ async function fetchAllEmployees() {
         empTbody.innerHTML = ''; quotaTbody.innerHTML = '';
 
         res.data.forEach(emp => {
-            const roleBadge = emp.role === 'admin' ? '<span style="background:#ffeaa7; color:#d35400; padding:4px 8px; border-radius:4px;">HR / Admin</span>' : '<span style="background-color: #81ecec; color: #008080; padding: 4px 8px; border-radius: 4px;">พนักงานทั่วไป</span>';
+            const roleBadge = emp.role === 'admin'
+                ? '<span class="badge badge-admin">🛡️ HR / Admin</span>'
+                : '<span class="badge badge-user">👤 พนักงานทั่วไป</span>';
 
             empTbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding:12px;">${emp.emp_id}</td>
+                <tr>
+                    <td style="text-align:center; font-weight:600; color:var(--text-mid);">${emp.emp_id}</td>
                     <td>
-                        ${emp.first_name} ${emp.last_name}<br>
-                        <small style="color: #888;">${emp.dept_name || 'ไม่ระบุแผนก'} | เรท: ฿${emp.hourly_rate || 0}/ชม.</small>
+                        <div class="emp-name">${emp.first_name} ${emp.last_name}</div>
+                        <div class="emp-sub">${emp.dept_name || 'ไม่ระบุแผนก'} | เรท: ฿${parseFloat(emp.hourly_rate||0).toFixed(2)}/ชม.</div>
                     </td>
-                    <td>${roleBadge}</td>
-                    <td>
-                        <button onclick="openEditModal('${emp.emp_id}', '${emp.first_name}', '${emp.last_name}', '${emp.role}', '${emp.dept_id || ''}', '${emp.hourly_rate || 0}')" style="background:#f39c12; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-right: 5px;"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteEmployee('${emp.emp_id}')" style="background:#ff4757; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                    <td style="text-align:center;">${roleBadge}</td>
+                    <td style="text-align:center;">
+                        <div class="actions-cell">
+                            <button class="btn-icon btn-icon-edit" onclick="openEditModal('${emp.emp_id}','${emp.first_name}','${emp.last_name}','${emp.role}','${emp.dept_id||''}','${emp.hourly_rate||0}')" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                            <button class="btn-icon btn-icon-delete" onclick="deleteEmployee('${emp.emp_id}')" title="ลบ"><i class="fas fa-trash"></i></button>
+                        </div>
                     </td>
                 </tr>`;
 
             quotaTbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee;"> 
-                    <td style="padding:12px;">${emp.emp_id}</td>
-                    <td style="padding:12px;">${emp.first_name} ${emp.last_name}</td>
-                    <td style="padding:12px;"><b style="color:red">${emp.sick_leave_remaining ?? 0}</b>/30</td>
-                    <td style="padding:12px;"><b style="color:orange">${emp.personal_leave_remaining ?? 0}</b>/6</td>
-                    <td style="padding:12px;"><b style="color:green">${emp.annual_leave_remaining ?? 0}</b>/6</td>
+                <tr>
+                    <td style="text-align:center; font-weight:600; font-size:0.78rem; color:var(--text-mid);">${emp.emp_id}</td>
+                    <td><div style="font-weight:600; font-size:0.82rem;">${emp.first_name} ${emp.last_name}</div></td>
+                    <td style="text-align:center; font-weight:700; color:#e74c3c;">${emp.sick_leave_remaining ?? 0}</td>
+                    <td style="text-align:center; font-weight:700; color:#e67e22;">${emp.personal_leave_remaining ?? 0}</td>
+                    <td style="text-align:center; font-weight:700; color:var(--green);">${emp.annual_leave_remaining ?? 0}</td>
                 </tr>`;
         });
     } catch (err) { console.error(err); }
@@ -181,11 +190,12 @@ document.getElementById('add-employee-form')?.addEventListener('submit', async (
     const first_name = document.getElementById('add-first-name').value;
     const last_name = document.getElementById('add-last-name').value;
     const role = document.getElementById('add-role').value;
+    const dept_id = document.getElementById('add-dept')?.value || null;
     const hourly_rate = document.getElementById('add-hourly-rate').value || 0;
 
     try {
         const res = await axios.post(`${API_URL}/employees/add`, {
-            emp_id, password, first_name, last_name, role, hourly_rate
+            emp_id, password, first_name, last_name, role, dept_id, hourly_rate
         });
         alert(`✅ ${res.data.message}`);
         e.target.reset();
@@ -346,16 +356,16 @@ async function loadAnnouncementsAdmin() {
 
     try {
         const res = await axios.get(`${API_URL}/announcements`);
-        
+
         if (res.data.length === 0) {
             listDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;"><i class="fas fa-inbox fa-3x" style="opacity: 0.2; display: block; margin-bottom: 10px;"></i>ยังไม่มีประกาศในระบบ</p>';
             return;
         }
 
-        listDiv.innerHTML = ''; 
+        listDiv.innerHTML = '';
         res.data.forEach(item => {
             const date = new Date(item.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-            
+
             listDiv.innerHTML += `
                 <div style="border: 1px solid #eaeaea; padding: 20px; border-radius: 8px; background: #fff; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 5px solid #e67e22; margin-bottom: 15px;">
                     <h4 style="color: #2c3e50; font-size: 1.15em; margin: 0 0 8px 0; padding-right: 50px;">${item.title}</h4>
@@ -371,18 +381,18 @@ async function loadAnnouncementsAdmin() {
                 </div>
             `;
         });
-    } catch (error) { 
-        listDiv.innerHTML = '<p style="color: red; text-align: center;">โหลดข้อมูลผิดพลาด</p>'; 
+    } catch (error) {
+        listDiv.innerHTML = '<p style="color: red; text-align: center;">โหลดข้อมูลผิดพลาด</p>';
     }
 }
 
 async function deleteAnnouncement(id) {
     if (!confirm('ยืนยันที่จะลบประกาศนี้ใช่หรือไม่?')) return;
-    try { 
-        await axios.delete(`${API_URL}/announcements/${id}`); 
-        loadAnnouncementsAdmin(); 
-    } catch (error) { 
-        alert('❌ ลบไม่สำเร็จ'); 
+    try {
+        await axios.delete(`${API_URL}/announcements/${id}`);
+        loadAnnouncementsAdmin();
+    } catch (error) {
+        alert('❌ ลบไม่สำเร็จ');
     }
 }
 
@@ -451,23 +461,34 @@ function renderAdminLeaveTable() {
                 diffDays = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
             }
 
+            const statusMap = {
+                approved: { cls: 'badge-approved', label: 'อนุมัติแล้ว' },
+                rejected: { cls: 'badge-rejected', label: 'ไม่อนุมัติ' },
+                pending:  { cls: 'badge-pending',  label: 'รอพิจารณา' }
+            };
+            const st = statusMap[item.status] || statusMap.pending;
+
+            const leaveTypeLabel = {
+                sick: 'ป่วย', personal: 'ลากิจ', annual: 'พักร้อน',
+                'Sick Leave': 'ป่วย', 'Personal Leave': 'ลากิจ', 'Annual Leave': 'พักร้อน'
+            };
+            const typeLabel = leaveTypeLabel[item.leave_type] || item.leave_type || '-';
+
             return `
-                <tr style="border-bottom: 1px solid #eee; text-align: center;">
-                    <td style="color: #7f8c8d; padding: 12px;">${safeDate(item.created_at)}</td>
-                    <td class="col-name" style="text-align: left;">
-                        <strong style="color: #2c3e50;">${item.emp_id || '-'}</strong><br>
-                        ${item.first_name || ''} ${item.last_name || ''}
+                <tr>
+                    <td style="text-align:center; color:var(--text-mid);">${safeDate(item.created_at)}</td>
+                    <td style="overflow:hidden;">
+                        <div class="emp-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.emp_id || '-'}</div>
+                        <div class="emp-sub" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.first_name || ''} ${item.last_name || ''}</div>
                     </td>
-                    <td><span class="badge-type" style="background: #f8f9fa; padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${item.leave_type || '-'}</span></td>
-                    <td style="color: #2980b9;">${safeDate(item.start_date)} <br>ถึง ${safeDate(item.end_date)}</td>
-                    
-                    <td style="font-weight: bold;">${diffDays} วัน</td>
-                    
-                    <td>
-                        <span class="status-badge" style="background:${item.status === 'approved' ? '#28a745' : item.status === 'rejected' ? '#dc3545' : '#f39c12'}; padding: 5px 12px; border-radius: 20px; color: white; font-size: 0.85em;">
-                            ${item.status === 'approved' ? 'อนุมัติแล้ว' : item.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอพิจารณา'}
-                        </span>
+                    <td style="text-align:center;">
+                        <span style="background:#f0f4f7; color:var(--text-mid); padding:3px 9px; border-radius:6px; font-size:0.78rem; font-weight:600; white-space:nowrap;">${typeLabel}</span>
                     </td>
+                    <td style="text-align:center; color:#2176ae; font-size:0.82rem; line-height:1.5;">
+                        ${safeDate(item.start_date)}<br><span style="color:var(--text-light);">ถึง</span> ${safeDate(item.end_date)}
+                    </td>
+                    <td style="text-align:center; font-weight:700; color:var(--text-dark);">${diffDays} <span style="font-weight:400; color:var(--text-light);">วัน</span></td>
+                    <td style="text-align:center;"><span class="badge ${st.cls}">${st.label}</span></td>
                 </tr>
             `;
         }).join('');
@@ -542,13 +563,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDepartments();
     loadPendingLeaves();
     fetchAllEmployees();
-    loadSalaryReport(); 
+    loadSalaryReport();
     loadAnnouncementsAdmin();
     fetchAndRenderAllLeaveHistory();
 
     // 🌟 ย้ายการผูกปุ่มสร้างประกาศเข้ามาไว้ในนี้ เพื่อให้ชัวร์ 100% ว่ามันจะหาฟอร์มเจอ!
     const announceForm = document.getElementById('announcement-form');
-    if(announceForm) {
+    if (announceForm) {
         announceForm.addEventListener('submit', async (e) => {
             e.preventDefault(); // ป้องกันเว็บกระตุก/รีโหลด
 
