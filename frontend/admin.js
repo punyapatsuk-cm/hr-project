@@ -1,3 +1,4 @@
+// 🌟 1. แก้ไข URL ให้ตรงกับหลังบ้าน (เพิ่ม /admin)
 const API_URL = 'http://localhost:1304/api/admin';
 
 // ==========================================
@@ -59,33 +60,37 @@ async function loadPendingLeaves() {
     } catch (err) { console.error(err); }
 }
 
-// ==========================================
-// 📊 โหลดตัวเลขสถิติ Dashboard 4 กล่อง
-// ==========================================
-async function loadDashboardStats() {
-    try {
-        const res = await axios.get(`${API_URL}/dashboard-stats`);
-        const stats = res.data;
+async function handleLeaveAction(leaveId, empId, leaveType, status, days) {
+    if (!confirm(`ยืนยันการทำรายการหรือไม่?`)) return;
 
-        // เอาตัวเลขไปยัดใส่กล่องต่างๆ
-        document.getElementById('widget-total').innerText = stats.total;
-        document.getElementById('widget-pending').innerText = stats.pending;
-        document.getElementById('widget-approved').innerText = stats.approved;
-        document.getElementById('widget-rejected').innerText = stats.rejected;
+    try {
+        const payload = {
+            leave_id: leaveId,
+            emp_id: empId,
+            leave_type: leaveType,
+            status: status,
+            days_requested: days
+        };
+
+        const res = await axios.put(`${API_URL}/leaves/update-status`, payload);
+        alert(`✅ ${res.data.message}`);
+
+        // รีโหลดข้อมูลให้เป็นปัจจุบันทันทีหลังกดปุ่ม
+        loadPendingLeaves();
+        updateDashboardStats();
+        fetchAndRenderAllLeaveHistory();
+
     } catch (err) {
-        console.error("โหลดสถิติไม่สำเร็จ", err);
+        console.error("Leave Action Error:", err);
+        alert('❌ ผิดพลาด: ' + (err.response?.data?.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'));
     }
 }
 
-
-
-// 🌟 สำคัญ: สั่งให้โหลดตอนเปิดหน้าเว็บ
-document.addEventListener('DOMContentLoaded', loadDashboardStats);
-
-// 1. ฟังก์ชันดึงตัวเลขจริงจากหลังบ้านมาอัปเดต Widget
+// ==========================================
+// 📊 3. โหลดตัวเลขสถิติ Dashboard 4 กล่อง
+// ==========================================
 async function updateDashboardStats() {
     try {
-        // ใช้ API_URL ที่เราตั้งไว้ตอนต้นไฟล์ (บรรทัดแรกสุด)
         const res = await axios.get(`${API_URL}/dashboard-stats`);
         const stats = res.data;
 
@@ -98,54 +103,15 @@ async function updateDashboardStats() {
     }
 }
 
-// 2. ฟังก์ชันเลื่อนหน้าจอ (Smooth Scroll)
 function scrollToTable() {
-    const table = document.querySelector('.card'); // เลื่อนไปที่ Card ตารางแรก
+    const table = document.querySelector('.card');
     if (table) {
         table.scrollIntoView({ behavior: 'smooth' });
     }
 }
 
-// อย่าลืม! เรียกใช้ฟังก์ชันตอนโหลดหน้าเว็บด้วย
-window.addEventListener('DOMContentLoaded', () => {
-    updateDashboardStats();
-});
-
-
-// สั่งให้ทำงานเมื่อโหลดหน้าเว็บ
-document.addEventListener('DOMContentLoaded', () => {
-    updateDashboardStats();
-});
-
-async function handleLeaveAction(leaveId, empId, leaveType, status, days) {
-    if (!confirm(`ยืนยันการทำรายการหรือไม่?`)) return;
-
-    try {
-        // 🌟 สร้างก้อนข้อมูลเพื่อเตรียมส่งไปหา Backend
-        const payload = {
-            leave_id: leaveId,
-            emp_id: empId,
-            leave_type: leaveType,
-            status: status,
-            days_requested: days
-        };
-
-        // 🌟 ส่งก้อน payload ไปพร้อมกับ URL
-        const res = await axios.put(`${API_URL}/leaves/update-status`, payload);
-
-        alert(`✅ ${res.data.message}`);
-
-        // รีโหลดตารางใหม่เพื่อดูผลลัพธ์
-        loadPendingLeaves();
-
-    } catch (err) {
-        console.error("Leave Action Error:", err);
-        alert('❌ ผิดพลาด: ' + (err.response?.data?.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'));
-    }
-}
-
 // ==========================================
-// 👥 3. ระบบจัดการพนักงาน
+// 👥 4. ระบบจัดการพนักงาน
 // ==========================================
 async function fetchAllEmployees() {
     const empTbody = document.getElementById('employee-list-body');
@@ -174,58 +140,43 @@ async function fetchAllEmployees() {
                 </tr>`;
 
             quotaTbody.innerHTML += `
-    <tr style="border-bottom: 1px solid #eee;"> 
-        <td style="padding:12px;">${emp.emp_id}</td>
-        <td style="padding:12px;">${emp.first_name} ${emp.last_name}</td>
-        <td style="padding:12px;"><b style="color:red">${emp.sick_leave_remaining ?? 0}</b>/30</td>
-        <td style="padding:12px;"><b style="color:orange">${emp.personal_leave_remaining ?? 0}</b>/6</td>
-        <td style="padding:12px;"><b style="color:green">${emp.annual_leave_remaining ?? 0}</b>/6</td>
-    </tr>`;
+                <tr style="border-bottom: 1px solid #eee;"> 
+                    <td style="padding:12px;">${emp.emp_id}</td>
+                    <td style="padding:12px;">${emp.first_name} ${emp.last_name}</td>
+                    <td style="padding:12px;"><b style="color:red">${emp.sick_leave_remaining ?? 0}</b>/30</td>
+                    <td style="padding:12px;"><b style="color:orange">${emp.personal_leave_remaining ?? 0}</b>/6</td>
+                    <td style="padding:12px;"><b style="color:green">${emp.annual_leave_remaining ?? 0}</b>/6</td>
+                </tr>`;
         });
     } catch (err) { console.error(err); }
 }
 
-// ==========================================
-// ➕ เพิ่มพนักงานใหม่ (Add Employee)
-// ==========================================
 document.getElementById('add-employee-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const emp_id = document.getElementById('add-emp-id').value;
     const password = document.getElementById('add-password').value;
     const first_name = document.getElementById('add-first-name').value;
     const last_name = document.getElementById('add-last-name').value;
     const role = document.getElementById('add-role').value;
-
-    // 🌟 ดึงค่าจากช่องค่าจ้าง (ถ้าไม่ได้กรอกให้เป็น 0)
     const hourly_rate = document.getElementById('add-hourly-rate').value || 0;
 
     try {
         const res = await axios.post(`${API_URL}/employees/add`, {
-            emp_id: emp_id,
-            password: password,
-            first_name: first_name,
-            last_name: last_name,
-            role: role,
-            hourly_rate: hourly_rate // 🌟 ส่งค่าจ้างพ่วงไปด้วย
+            emp_id, password, first_name, last_name, role, hourly_rate
         });
-
         alert(`✅ ${res.data.message}`);
         e.target.reset();
         fetchAllEmployees();
-
     } catch (err) {
         alert(`❌ ผิดพลาด: ${err.response?.data?.message || 'ไม่สามารถเพิ่มพนักงานได้'}`);
     }
 });
 
-// ลบพนักงาน
 async function deleteEmployee(id) {
     if (!confirm('ยืนยันลบพนักงานคนนี้?')) return;
     try { await axios.delete(`${API_URL}/employees/${id}`); fetchAllEmployees(); } catch (err) { alert('ลบไม่สำเร็จ'); }
 }
 
-// Modal แก้ไขพนักงาน
 function openEditModal(id, fname, lname, role, dept_id, hourly_rate) {
     document.getElementById('edit-emp-id').value = id;
     document.getElementById('edit-first-name').value = fname;
@@ -235,6 +186,7 @@ function openEditModal(id, fname, lname, role, dept_id, hourly_rate) {
     document.getElementById('edit-hourly-rate').value = hourly_rate;
     document.getElementById('editEmployeeModal').style.display = 'flex';
 }
+
 function closeEditModal() { document.getElementById('editEmployeeModal').style.display = 'none'; }
 
 document.getElementById('edit-employee-form')?.addEventListener('submit', async (e) => {
@@ -254,63 +206,107 @@ document.getElementById('edit-employee-form')?.addEventListener('submit', async 
 });
 
 // ==========================================
-// 💰 4. ระบบรายงานเงินเดือน
+// 💰 5. ระบบรายงานเงินเดือน และวาดกราฟ (รวมกันแล้ว)
 // ==========================================
+let workHoursChartInstance = null; // ตัวแปรเก็บกราฟ
+
 async function loadSalaryReport() {
     try {
-        const monthInput = document.getElementById('report-month').value;
-        let url = `${API_URL}/salary-report`; // หรือเป็น http://localhost:1304/api/admin/salary-report
+        const monthInput = document.getElementById('report-month')?.value;
+        let url = `${API_URL}/salary-report`;
         if (monthInput) {
             const [y, m] = monthInput.split('-');
             url += `?year=${y}&month=${m}`;
         }
 
         const res = await axios.get(url);
+        const data = res.data;
         const tbody = document.getElementById('salary-report-body');
-        if (!tbody) return;
 
-        tbody.innerHTML = res.data.length ? '' : '<tr><td colspan="7" style="padding: 20px;">ไม่พบข้อมูล</td></tr>';
+        // 1. วาดลงตาราง
+        if (tbody) {
+            tbody.innerHTML = data.length ? '' : '<tr><td colspan="7" style="padding: 20px; color: #999;">ไม่พบข้อมูล</td></tr>';
+            data.forEach(emp => {
+                const pay = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(emp.totalPay || 0);
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding:15px 10px;">${emp.emp_id}</td>
+                        <td class="col-name">${emp.first_name} ${emp.last_name}</td>
+                        <td style="color: #3498db; font-weight: bold;">${emp.total_work_hours || 0}</td>
+                        <td style="color: #e67e22; font-weight: bold;">${emp.total_ot_hours || 0}</td>
+                        <td style="color: #dc3545; font-weight: bold;">${emp.sick_leaves || 0}</td>
+                        <td style="color: #f39c12; font-weight: bold;">${emp.personal_leaves || 0}</td>
+                        <td style="color: #28a745; font-weight: bold; font-size: 1.1em;">${pay}</td>
+                    </tr>`;
+            });
+        }
 
-        res.data.forEach(emp => {
-            // ฟอร์แมตจำนวนเงินให้ดูสวยงาม (มีลูกน้ำ และจุดทศนิยม)
-            const pay = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(emp.totalPay);
+        // 2. วาดลงกราฟ
+        drawWorkHoursChart(data);
 
-            tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding:12px;">${emp.emp_id}</td>
-                    <td>${emp.first_name} ${emp.last_name}</td>
-                    <td style="color: #17a2b8; font-weight: bold;">${emp.total_work_hours || 0}</td>
-                    <td style="color: #fd7e14; font-weight: bold;">${emp.total_ot_hours || 0}</td>
-                    <td style="color: #dc3545; font-weight: bold;">${emp.sick_leaves || 0}</td>
-                    <td style="color: #f39c12; font-weight: bold;">${emp.personal_leaves || 0}</td>
-                    <td style="color: #28a745; font-weight: bold; font-size: 1.1em;">${pay}</td>
-                </tr>`;
-        });
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error("โหลดรายงานพลาด:", err); }
 }
 
-// ==========================================
-// 📥 ฟังก์ชันดาวน์โหลดตารางเป็นไฟล์ CSV (Excel)
-// ==========================================
+function drawWorkHoursChart(data) {
+    const ctx = document.getElementById('workHoursChart');
+    if (!ctx) return;
+
+    const labels = data.map(emp => `${emp.first_name}`);
+    const workHoursData = data.map(emp => emp.total_work_hours || 0);
+    const otHoursData = data.map(emp => emp.total_ot_hours || 0);
+
+    if (workHoursChartInstance) {
+        workHoursChartInstance.destroy();
+    }
+
+    workHoursChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'ชั่วโมงทำงานปกติ',
+                    data: workHoursData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                },
+                {
+                    label: 'ชั่วโมง OT',
+                    data: otHoursData,
+                    backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'จำนวนชั่วโมง' } }
+            },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+}
+
 function exportSalaryCSV() {
     const table = document.getElementById("salary-table");
     if (!table) return alert("ไม่พบข้อมูลสำหรับดาวน์โหลด");
 
-    // ดึงค่าเดือนที่เลือกมาตั้งเป็นชื่อไฟล์ (ถ้าไม่ได้เลือกจะใช้คำว่า All)
     const monthInput = document.getElementById('report-month').value || 'All';
     const fileName = `Salary_Report_${monthInput}.csv`;
 
-    // กวาดข้อมูลจากตารางมาจัดเรียง
     let rows = Array.from(table.rows).map(row => {
         return Array.from(row.cells).map(c => {
-            // ลบเครื่องหมายลูกน้ำ และสัญลักษณ์เงินบาท (฿) ออก เพื่อให้ Excel เอาไปคำนวณต่อได้
             let text = c.innerText.replace(/,/g, '').replace(/฿/g, '').trim();
-            // ใส่ฟันหนู ("") ครอบไว้ เผื่อในข้อความมีการเว้นวรรค ตารางจะได้ไม่เบี้ยว
             return `"${text}"`;
         }).join(",");
     });
 
-    // ใส่ \uFEFF นำหน้าเพื่อให้ Excel อ่านภาษาไทยได้ไม่เป็นภาษาต่างดาว
     const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -321,20 +317,44 @@ function exportSalaryCSV() {
 }
 
 // ==========================================
-// 📢 5. ระบบประกาศข่าวสาร (Announcements)
+// 📢 ระบบประกาศข่าวสาร
 // ==========================================
-document.getElementById('announcement-form')?.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const title = document.getElementById('announce-title').value;
-    const content = document.getElementById('announce-content').value;
+async function loadAnnouncementsAdmin() {
+    const listDiv = document.getElementById('admin-announcement-list');
+    if (!listDiv) return;
 
     try {
-        await axios.post(`${API_URL}/announcements`, { title, content });
-        alert('✅ แจ้งประกาศสำเร็จ');
-        this.reset();
-        loadAnnouncementsAdmin();
-    } catch (error) { alert('❌ ไม่สามารถลงประกาศได้'); }
-});
+        const res = await axios.get(`${API_URL}/announcements`);
+        
+        if (res.data.length === 0) {
+            listDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;"><i class="fas fa-inbox fa-3x" style="opacity: 0.2; display: block; margin-bottom: 10px;"></i>ยังไม่มีประกาศในระบบ</p>';
+            return;
+        }
+
+        listDiv.innerHTML = ''; // ล้างของเก่าก่อนใส่ของใหม่
+        res.data.forEach(item => {
+            const date = new Date(item.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+            
+            // วาดกล่องประกาศ (Card ย่อย) ให้ดูมีมิติ
+            listDiv.innerHTML += `
+                <div style="border: 1px solid #eaeaea; padding: 20px; border-radius: 8px; background: #fff; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 5px solid #e67e22;">
+                    <h4 style="color: #2c3e50; font-size: 1.15em; margin: 0 0 8px 0; padding-right: 50px;">${item.title}</h4>
+                    <p style="margin: 0 0 12px 0; font-size: 0.85em; color: #7f8c8d;">
+                        <i class="far fa-clock"></i> เผยแพร่เมื่อ: ${date}
+                    </p>
+                    <p style="margin: 0; white-space: pre-line; color: #444; line-height: 1.6; font-size: 0.95em;">${item.content}</p>
+                    
+                    <button onclick="deleteAnnouncement(${item.id})" title="ลบประกาศ" 
+                        style="position: absolute; top: 20px; right: 20px; background: #ff4757; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(255,71,87,0.3);">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `;
+        });
+    } catch (error) { 
+        listDiv.innerHTML = '<p style="color: red; text-align: center;">โหลดข้อมูลผิดพลาด</p>'; 
+    }
+}
 
 async function loadAnnouncementsAdmin() {
     const listDiv = document.getElementById('admin-announcement-list');
@@ -364,37 +384,16 @@ async function deleteAnnouncement(id) {
     catch (error) { alert('❌ ลบไม่สำเร็จ'); }
 }
 
-
-
 // ==========================================
-// 🧭 6. ระบบนำทาง (Navigation)
+// 🏖️ 7. ประวัติการลาทั้งหมด (มีระบบค้นหา)
 // ==========================================
-function switchPage(event, pageId, clickedLink) {
-    event.preventDefault();
-    document.querySelectorAll('.page-section').forEach(p => p.style.display = 'none');
-    document.getElementById(pageId).style.display = 'block';
-    document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-    clickedLink.classList.add('active');
-
-    if (pageId === 'page-manage-employees') fetchAllEmployees();
-    if (pageId === 'page-approve-leave') loadPendingLeaves();
-    if (pageId === 'page-report') loadSalaryReport();
-    if (pageId === 'page-announcements') loadAnnouncementsAdmin();
-}
-
-// ==========================================
-// 🏖️ 7. ระบบค้นหาและแบ่งหน้า (หน้า Admin: ประวัติการลาทั้งหมด)
-// ==========================================
-
-let allAdminLeaveRecords = []; // เก็บข้อมูลการลาทั้งหมด
+let allAdminLeaveRecords = [];
 let currentAdminPage = 1;
-const adminItemsPerPage = 10; // แสดง 10 รายการต่อหน้า
 
-// 1. ดึงข้อมูลประวัติการลาทั้งหมดมาเก็บไว้ (ดัดแปลงจากฟังก์ชันเดิมของคุณ)
+// 🌟 แก้ไขบัคคำว่า await ซ้อนกันตรงนี้ให้แล้วครับ
 async function fetchAndRenderAllLeaveHistory() {
     try {
-        // เปลี่ยนจาก URL เต็มๆ มาใช้ตัวแปร API_URL
-        const res = await await axios.get(`${API_URL}/leave-history`);
+        const res = await axios.get(`${API_URL}/leave-history`);
         allAdminLeaveRecords = res.data;
         currentAdminPage = 1;
         renderAdminLeaveTable();
@@ -403,11 +402,7 @@ async function fetchAndRenderAllLeaveHistory() {
     }
 }
 
-// ==========================================
-// 🛡️ 2. ฟังก์ชันวาดตารางและค้นหา (อัปเดตป้องกัน Error 100%)
-// ==========================================
 function renderAdminLeaveTable() {
-    console.log("หน้าตาข้อมูลจาก Database:", allAdminLeaveRecords);
     const tbody = document.getElementById('all-leave-history-body');
     const searchInput = document.getElementById('search-admin-leave');
     const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
@@ -415,18 +410,14 @@ function renderAdminLeaveTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    // 🔍 ตัวกรองค้นหา (Safe Search - ป้องกันข้อมูล null)
-    let filteredRecords = allAdminLeaveRecords; // 👈 เริ่มต้นให้ดึงข้อมูลทั้งหมดมาเตรียมไว้ก่อน
+    let filteredRecords = allAdminLeaveRecords;
 
-    // 👈 ถ้ามีการพิมพ์ค้นหา ค่อยเอาไปกรอง
     if (searchTerm !== '') {
         filteredRecords = allAdminLeaveRecords.filter(item => {
             if (!item) return false;
-            // บังคับแปลงเป็น String ก่อนค้นหา จะได้ไม่พัง
             const empId = String(item.emp_id || '').toLowerCase();
             const fullName = String(`${item.first_name || ''} ${item.last_name || ''}`).toLowerCase();
             const typeName = String(item.leave_type || '').toLowerCase();
-
             return empId.includes(searchTerm) || fullName.includes(searchTerm) || typeName.includes(searchTerm);
         });
     }
@@ -436,9 +427,7 @@ function renderAdminLeaveTable() {
         renderAdminPagination(0);
         return;
     }
-    // ... โค้ดส่วนที่เหลือ (Pagination และการวาดตาราง) เหมือนเดิมครับ
 
-    // 🌟 คำนวณหน้า Pagination (ฮาร์ดโค้ด 10 ไว้เลย กันตัวแปรหาย)
     const itemsPerPage = 10;
     const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
     if (currentAdminPage > totalPages || isNaN(currentAdminPage)) currentAdminPage = 1;
@@ -446,7 +435,6 @@ function renderAdminLeaveTable() {
     const startIndex = (currentAdminPage - 1) * itemsPerPage;
     const recordsToShow = filteredRecords.slice(startIndex, startIndex + itemsPerPage);
 
-    // 🛡️ ฟังก์ชันเช็ควันที่แบบปลอดภัย
     const safeDate = (dateStr) => {
         if (!dateStr) return '-';
         const d = new Date(dateStr);
@@ -454,7 +442,6 @@ function renderAdminLeaveTable() {
     };
 
     try {
-        // 🌟 พยายามวาดตาราง
         tbody.innerHTML = recordsToShow.map(item => `
             <tr style="border-bottom: 1px solid #eee;">
                 <td style="color: #7f8c8d;">${safeDate(item.created_at)}</td>
@@ -464,10 +451,10 @@ function renderAdminLeaveTable() {
                 </td>
                 <td><span class="badge-type">${item.leave_type || '-'}</span></td>
                 <td style="color: #2980b9;">${safeDate(item.start_date)} <br>ถึง ${safeDate(item.end_date)}</td>
-                <td style="font-weight: bold;">${item.days_requested || '-'} วัน</td>
+                <td style="font-weight: bold;">${item.leave_days || item.days || '-'} วัน</td>
                 <td>
-                    <span class="status-badge" style="background:${item.status === 'approved' ? '#28a745' : item.status === 'rejected' ? '#dc3545' : '#f39c12'}">
-                        ${item.status === 'approved' ? 'อนุมัติแล้ว' : item.status === 'rejected' ? 'ไม่อนุมัติ' : 'รออนุมัติ'}
+                    <span class="status-badge" style="background:${item.status === 'approved' ? '#28a745' : item.status === 'rejected' ? '#dc3545' : '#f39c12'}; padding: 5px 12px; border-radius: 20px; color: white;">
+                        ${item.status === 'approved' ? 'อนุมัติแล้ว' : item.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอพิจารณา'}
                     </span>
                 </td>
             </tr>
@@ -475,17 +462,13 @@ function renderAdminLeaveTable() {
 
         renderAdminPagination(totalPages);
     } catch (error) {
-        // ถ้าข้อมูลมีปัญหาจริงๆ จะไม่ขาวโพลน แต่จะฟ้องบอก
         console.error("Render Table Error:", error);
-        tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: red;">เกิดข้อผิดพลาดในการแสดงผลข้อมูล (เช็ค Console)</td></tr>';
     }
 }
 
-// 3. ฟังก์ชันสร้างปุ่มหน้า (Pagination)
 function renderAdminPagination(totalPages) {
     const paginationDiv = document.getElementById('admin-leave-pagination');
     if (!paginationDiv) return;
-
     paginationDiv.innerHTML = '';
     if (totalPages <= 1) return;
 
@@ -498,7 +481,6 @@ function renderAdminPagination(totalPages) {
         btn.style.borderRadius = '3px';
         btn.style.cursor = 'pointer';
 
-        // สลับสีปุ่มหน้าปัจจุบัน
         if (i === currentAdminPage) {
             btn.style.backgroundColor = '#3498db';
             btn.style.color = 'white';
@@ -511,12 +493,10 @@ function renderAdminPagination(totalPages) {
             currentAdminPage = i;
             renderAdminLeaveTable();
         });
-
         paginationDiv.appendChild(btn);
     }
 }
 
-// 4. ผูก Event ค้นหาให้ทำงานเมื่อพิมพ์
 const adminSearchInput = document.getElementById('search-admin-leave');
 if (adminSearchInput) {
     adminSearchInput.addEventListener('input', () => {
@@ -524,97 +504,33 @@ if (adminSearchInput) {
         renderAdminLeaveTable();
     });
 }
+
 // ==========================================
-// 📈 8. ระบบวาดกราฟสถิติ (Chart.js)
+// 🧭 8. ระบบสลับหน้าต่าง (Navigation)
 // ==========================================
-let workHoursChartInstance = null; // สร้างตัวแปรเก็บสถานะกราฟ ป้องกันบั๊กกราฟซ้อนกัน
+function switchPage(event, pageId, clickedLink) {
+    if (event) event.preventDefault();
+    document.querySelectorAll('.page-section').forEach(p => p.style.display = 'none');
+    document.getElementById(pageId).style.display = 'block';
+    document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+    if (clickedLink) clickedLink.classList.add('active');
 
-async function loadWorkHoursChart() {
-    try {
-        // 🌟 ดึงข้อมูลจาก API รายงานเงินเดือน (เพราะมีข้อมูลชั่วโมงทำงานอยู่แล้ว)
-        const res = await axios.get(`${API_URL}/salary-report`);
-        const data = res.data;
-
-        // ถ้าไม่มีข้อมูล ให้หยุดการทำงาน
-        if (!data || data.length === 0) return;
-
-        // 🌟 1. เตรียมข้อมูลแกน X (ชื่อพนักงาน) และแกน Y (ชั่วโมงทำงาน, OT)
-        const labels = [];
-        const workHoursData = [];
-        const otHoursData = [];
-
-        data.forEach(emp => {
-            labels.push(`${emp.first_name} ${emp.last_name}`);
-            workHoursData.push(emp.total_work_hours || 0);
-            otHoursData.push(emp.total_ot_hours || 0);
-        });
-
-        // 🌟 2. วาดกราฟลงบน Canvas
-        const ctx = document.getElementById('workHoursChart');
-        if (!ctx) return; // ถ้าไม่เจอ Canvas (อาจจะอยู่คนละหน้า) ให้ข้ามไป
-
-        // สำคัญ: ต้องเคลียร์กราฟเก่าทิ้งก่อนวาดใหม่ ไม่งั้นเวลาเอาเมาส์ชี้มันจะกระพริบ
-        if (workHoursChartInstance) {
-            workHoursChartInstance.destroy();
-        }
-
-        workHoursChartInstance = new Chart(ctx, {
-            type: 'bar', // กำหนดประเภทเป็นกราฟแท่ง
-            data: {
-                labels: labels, // แกน X: ชื่อพนักงาน
-                datasets: [
-                    {
-                        label: 'ชั่วโมงทำงานปกติ',
-                        data: workHoursData, // แกน Y: จำนวนชั่วโมง
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)', // สีฟ้า
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4 // ขอบมนๆ ให้ดูทันสมัย
-                    },
-                    {
-                        label: 'ชั่วโมง OT',
-                        data: otHoursData, // แกน Y: จำนวน OT
-                        backgroundColor: 'rgba(255, 159, 64, 0.7)', // สีส้ม
-                        borderColor: 'rgba(255, 159, 64, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'จำนวนชั่วโมง'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top', // เอาป้ายบอกสีไว้ด้านบน
-                    }
-                }
-            }
-        });
-
-    } catch (err) {
-        console.error("โหลดข้อมูลกราฟไม่สำเร็จ:", err);
-    }
+    if (pageId === 'page-manage-employees') fetchAllEmployees();
+    if (pageId === 'page-approve-leave') { loadPendingLeaves(); updateDashboardStats(); fetchAndRenderAllLeaveHistory(); }
+    if (pageId === 'page-report') loadSalaryReport();
+    if (pageId === 'page-announcements') loadAnnouncementsAdmin();
 }
 
-
-// รวมไว้ที่เดียวล่างสุดของไฟล์ admin.js
+// ==========================================
+// 🚀 9. โหลดข้อมูลตอนเปิดเว็บไซต์ (ครั้งเดียวจบ)
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Admin Dashboard Initializing...");
+    console.log("🚀 Admin Dashboard is Ready!");
     updateDashboardStats();
     loadDepartments();
     loadPendingLeaves();
     fetchAllEmployees();
-    loadSalaryReport();
+    loadSalaryReport(); // จะทำการวาดตารางและกราฟให้เลย
     loadAnnouncementsAdmin();
     fetchAndRenderAllLeaveHistory();
-    loadWorkHoursChart(); 
 });

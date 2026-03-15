@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "nodemon": "^3.1.14"
-  },
-  "dependencies": {
-    "multer": "^2.1.1"
-  }
-}

@@ -6,10 +6,9 @@
     <title>HR Dashboard - ระบบจัดการพนักงาน</title>
     <link rel="stylesheet" href="home.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <style>
         /* 🌟 สไตล์กล่อง Dashboard (AdminLTE Widgets) */
@@ -328,74 +327,96 @@
                 </div>
 
                 <div id="page-report" class="page-section" style="display: none;">
+
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2 class="section-title" style="margin: 0;"><i class="fas fa-file-invoice-dollar"></i>
                             รายงานสรุปเงินเดือน</h2>
                         <div style="display: flex; gap: 10px;">
                             <input type="month" id="report-month"
-                                style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px;">
+                                style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;">
                             <button onclick="loadSalaryReport()"
-                                style="background-color: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;"><i
-                                    class="fas fa-search"></i> ค้นหา</button>
+                                style="background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                <i class="fas fa-search"></i> ค้นหา
+                            </button>
                             <button onclick="exportSalaryCSV()"
-                                style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;"><i
-                                    class="fas fa-file-csv"></i> ดาวน์โหลด CSV</button>
+                                style="background: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                <i class="fas fa-file-csv"></i> ดาวน์โหลด CSV
+                            </button>
                         </div>
                     </div>
-                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-                    <div class="card"
-                        style="width: 100%; max-width: 900px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                        <h3 style="margin-bottom: 20px; color: #2c3e50;"><i class="fas fa-chart-bar"></i>
-                            กราฟสรุปชั่วโมงทำงานและ OT ของพนักงาน</h3>
-                        <canvas id="workHoursChart"></canvas>
+                    <div class="card" style="border-left: 4px solid #1abc9c; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; font-size: 1.1em; color: #2c3e50;">
+                            <i class="fas fa-chart-bar" style="color: #34495e;"></i> กราฟสรุปชั่วโมงทำงานและ OT
+                            ของพนักงาน
+                        </h3>
+                        <div style="width: 100%; max-width: 800px; margin: 0 auto; height: 300px;">
+                            <canvas id="workHoursChart"></canvas>
+                        </div>
                     </div>
-                    <div class="card" style="margin-top: 20px; overflow-x: auto;">
-                        <table id="salary-table" style="width: 100%; border-collapse: collapse; text-align: center;">
+
+                    <div class="card" style="border-left: 4px solid #1abc9c; overflow-x: auto;">
+                        <table id="salary-table"
+                            style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.95em;">
                             <thead>
                                 <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <th>ID</th>
-                                    <th>ชื่อ-นามสกุล</th>
-                                    <th style="color: #17a2b8;">ทำงาน (ชม.)</th>
-                                    <th style="color: #fd7e14;">OT (ชม.)</th>
+                                    <th style="padding: 15px 10px; color: #555;">ID</th>
+                                    <th style="padding: 15px 10px; color: #555;">ชื่อ-นามสกุล</th>
+                                    <th style="color: #3498db;">ทำงาน (ชม.)</th>
+                                    <th style="color: #e67e22;">OT (ชม.)</th>
                                     <th style="color: #dc3545;">ลาป่วย (วัน)</th>
                                     <th style="color: #f39c12;">ลากิจ (วัน)</th>
                                     <th style="color: #28a745;">ยอดสุทธิ (บาท)</th>
                                 </tr>
                             </thead>
-                            <tbody id="salary-report-body"></tbody>
+                            <tbody id="salary-report-body">
+                            </tbody>
                         </table>
                     </div>
                 </div>
 
                 <div id="page-announcements" class="page-section" style="display: none;">
                     <h2 class="section-title"><i class="fas fa-bullhorn"></i> จัดการประกาศข่าวสาร</h2>
-                    <div class="card" style="margin-bottom: 20px; border-top: 5px solid #e67e22;">
-                        <h3><i class="fas fa-plus-circle"></i> สร้างประกาศใหม่</h3>
-                        <form id="announcement-form" style="margin-top: 15px;">
-                            <div style="margin-bottom: 15px;">
-                                <label
-                                    style="display: block; margin-bottom: 5px; font-weight: bold;">หัวข้อประกาศ:</label>
-                                <input type="text" id="announce-title" placeholder="เช่น แจ้งวันหยุดบริษัท..." required
-                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
-                            </div>
-                            <div style="margin-bottom: 15px;">
-                                <label
-                                    style="display: block; margin-bottom: 5px; font-weight: bold;">รายละเอียดเนื้อหา:</label>
-                                <textarea id="announce-content" placeholder="พิมพ์รายละเอียดที่นี่..." required
-                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; height: 120px; resize: vertical;"></textarea>
-                            </div>
-                            <button type="submit"
-                                style="background: #e67e22; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;"><i
-                                    class="fas fa-paper-plane"></i> แจ้งประกาศ</button>
-                        </form>
-                    </div>
-                    <div class="card">
-                        <h3><i class="fas fa-history"></i> รายการประกาศทั้งหมด</h3>
-                        <div id="admin-announcement-list" style="margin-top: 15px;">
-                            <p style="text-align: center; color: #999;">กำลังโหลดข้อมูล...</p>
+
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+
+                        <div class="card" style="flex: 1; min-width: 350px; border-top: 4px solid #e67e22;">
+                            <h3 style="margin-bottom: 20px; color: #2c3e50;">
+                                <i class="fas fa-plus-circle" style="color: #e67e22;"></i> สร้างประกาศใหม่
+                            </h3>
+                            <form id="announcement-form">
+                                <div style="margin-bottom: 15px;">
+                                    <label
+                                        style="display: block; margin-bottom: 8px; font-weight: bold; color: #555;">หัวข้อประกาศ:</label>
+                                    <input type="text" id="announce-title"
+                                        placeholder="เช่น แจ้งวันหยุด, อัปเดตสวัสดิการ..." required
+                                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 1em; box-sizing: border-box;">
+                                </div>
+                                <div style="margin-bottom: 20px;">
+                                    <label
+                                        style="display: block; margin-bottom: 8px; font-weight: bold; color: #555;">รายละเอียดเนื้อหา:</label>
+                                    <textarea id="announce-content" placeholder="พิมพ์รายละเอียดประกาศที่นี่..."
+                                        required
+                                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; height: 180px; resize: vertical; font-family: inherit; font-size: 1em; box-sizing: border-box;"></textarea>
+                                </div>
+                                <button type="submit"
+                                    style="background: #e67e22; color: white; border: none; padding: 14px 25px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; font-size: 1.05em; transition: 0.3s; box-shadow: 0 4px 6px rgba(230,126,34,0.2);">
+                                    <i class="fas fa-paper-plane"></i> เผยแพร่ประกาศ
+                                </button>
+                            </form>
                         </div>
+
+                        <div class="card" style="flex: 2; min-width: 400px; border-top: 4px solid #3498db;">
+                            <h3 style="margin-bottom: 20px; color: #2c3e50;">
+                                <i class="fas fa-list-alt" style="color: #3498db;"></i> ประกาศที่เผยแพร่แล้ว
+                            </h3>
+                            <div id="admin-announcement-list"
+                                style="display: flex; flex-direction: column; gap: 15px; max-height: 600px; overflow-y: auto; padding-right: 10px;">
+                                <p style="text-align: center; color: #999; padding: 20px;">กำลังโหลดประกาศ...</p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>

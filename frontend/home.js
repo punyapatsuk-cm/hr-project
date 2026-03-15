@@ -15,13 +15,10 @@ if (!name || !empId) {
 
     // โหลดข้อมูลเริ่มต้น
     updateClock();
-    setInterval(updateClock, 1000); // ให้นาฬิกาเดินทุก 1 วินาที (เรียกแค่ครั้งเดียวพอ)
+    setInterval(updateClock, 1000); // ให้นาฬิกาเดินทุก 1 วินาที
 
-    // โหลดข้อมูลหน้าแรก (ข่าวสาร) ทันทีที่เข้าเว็บ
-    loadAnnouncements();
-    // โหลดประวัติรอไว้เลย
-    loadAttendanceHistory();
-    loadLeaveHistory();
+    // โหลดข้อมูลหน้า Dashboard ทันทีที่เข้าเว็บ
+    loadEmployeeDashboard(); 
 }
 
 // ==========================================
@@ -40,7 +37,6 @@ function logout() {
     }
 }
 
-// 🌟 รวมฟังก์ชันเปลี่ยนหน้าไว้ที่เดียว (ลบการ Override ทิ้งเพื่อป้องกันบั๊ก)
 function switchPage(event, pageId, clickedLink) {
     if (event) event.preventDefault();
 
@@ -56,9 +52,10 @@ function switchPage(event, pageId, clickedLink) {
     if (clickedLink) clickedLink.classList.add('active');
 
     // 4. โหลดข้อมูลใหม่ตามหน้าที่คลิก (Refresh Data)
+    if (pageId === 'page-dashboard') loadEmployeeDashboard();
     if (pageId === 'page-news') loadAnnouncements();
     if (pageId === 'page-profile') loadUserProfile();
-    if (pageId === 'page-schedule') loadAttendanceHistory(); // แก้ ID ให้ตรงกับ HTML ของคุณ
+    if (pageId === 'page-schedule') loadAttendanceHistory(); 
     if (pageId === 'page-leave') loadLeaveHistory();
 }
 
@@ -78,10 +75,8 @@ function updateClock() {
     }
 }
 
-// [เข้างาน]
-document.getElementById('btn-clock-in').addEventListener('click', async function (event) {
+document.getElementById('btn-clock-in')?.addEventListener('click', async function (event) {
     event.preventDefault();
-
     const statusEl = document.getElementById('attendance-status');
     statusEl.innerText = 'สถานะ: ⏳ กำลังบันทึกข้อมูล...';
     statusEl.style.color = '#007bff';
@@ -91,9 +86,7 @@ document.getElementById('btn-clock-in').addEventListener('click', async function
         statusEl.innerText = 'สถานะ: ✅ ' + response.data.message;
         statusEl.style.color = 'green';
         alert('✅ ' + response.data.message);
-
-        loadAttendanceHistory(); // โหลดตารางใหม่ทันที
-
+        loadAttendanceHistory(); 
     } catch (error) {
         const errorMsg = error.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
         statusEl.innerText = 'สถานะ: ❌ ' + errorMsg;
@@ -102,16 +95,14 @@ document.getElementById('btn-clock-in').addEventListener('click', async function
     }
 });
 
-// [เลิกงาน]
-document.getElementById('btn-clock-out').addEventListener('click', async function (event) {
+document.getElementById('btn-clock-out')?.addEventListener('click', async function (event) {
     event.preventDefault();
-
     if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการบันทึกเวลา 'เลิกงาน' ?")) return;
 
     try {
         const response = await axios.post('http://localhost:1304/api/attendance/clock-out', { emp_id: empId });
         alert('✅ ' + response.data.message);
-        loadAttendanceHistory(); // โหลดตารางใหม่ทันที
+        loadAttendanceHistory(); 
     } catch (error) {
         alert('❌ ' + (error.response?.data?.message || "ผิดพลาด"));
     }
@@ -121,6 +112,7 @@ async function loadAttendanceHistory() {
     try {
         const response = await axios.get(`http://localhost:1304/api/attendance/history/${empId}`);
         const tbody = document.getElementById('history-table-body');
+        if(!tbody) return;
         tbody.innerHTML = '';
 
         if (response.data.length === 0) {
@@ -142,14 +134,15 @@ async function loadAttendanceHistory() {
             `;
         });
     } catch (error) {
-        document.getElementById('history-table-body').innerHTML = '<tr><td colspan="3" style="padding: 20px; color: red;">ไม่สามารถโหลดประวัติได้</td></tr>';
+        const tbody = document.getElementById('history-table-body');
+        if(tbody) tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; color: red;">ไม่สามารถโหลดประวัติได้</td></tr>';
     }
 }
 
 // ==========================================
 // 🏖️ 4. ระบบลางาน (Leave Management)
 // ==========================================
-document.getElementById('leave-form').addEventListener('submit', async function (event) {
+document.getElementById('leave-form')?.addEventListener('submit', async function (event) {
     event.preventDefault();
 
     const leaveType = document.getElementById('leave-type').value;
@@ -177,80 +170,63 @@ document.getElementById('leave-form').addEventListener('submit', async function 
 
         alert('✅ ' + response.data.message);
         document.getElementById('leave-form').reset();
-        loadLeaveHistory(); // โหลดประวัติใหม่หลังส่งสำเร็จ
-
+        loadLeaveHistory(); 
     } catch (error) {
         alert('❌ ' + (error.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้"));
     }
 });
 
+let allLeaveRecords = []; 
+let currentLeavePage = 1; 
+const leaveItemsPerPage = 5; 
 
-
-// ==========================================
-// 🏖️ ระบบลางาน + ค้นหา + แบ่งหน้า (Pagination)
-// ==========================================
-
-let allLeaveRecords = []; // เก็บข้อมูลการลาทั้งหมดที่ดึงมาจาก API
-let currentLeavePage = 1; // หน้าปัจจุบัน
-const leaveItemsPerPage = 5; // กำหนดว่าอยากให้แสดงกี่แถวต่อ 1 หน้า (เปลี่ยนเป็น 10 ได้ครับ)
-
-// 1. ฟังก์ชันดึงข้อมูลจาก API (ดึงครั้งเดียว)
 async function loadLeaveHistory() {
-    const empId = localStorage.getItem('employeeId');
     if (!empId) return;
-
     try {
         const response = await axios.get(`http://localhost:1304/api/leave/history/${empId}`);
-        allLeaveRecords = response.data; // เก็บข้อมูลทั้งหมดไว้ในตัวแปร
-        currentLeavePage = 1; // รีเซ็ตกลับไปหน้า 1 เสมอเวลาโหลดใหม่
-
-        renderLeaveTable(); // เรียกฟังก์ชันวาดตาราง
+        allLeaveRecords = response.data; 
+        currentLeavePage = 1; 
+        renderLeaveTable(); 
     } catch (error) {
-        document.getElementById('leave-history-body').innerHTML =
-            '<tr><td colspan="4" style="padding: 20px; color: red; text-align: center;">ไม่สามารถโหลดประวัติได้</td></tr>';
+        const tbody = document.getElementById('leave-history-body');
+        if(tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; color: red; text-align: center;">ไม่สามารถโหลดประวัติได้</td></tr>';
     }
 }
 
-// 2. ฟังก์ชันวาดตาราง (จัดการเรื่องค้นหาและแบ่งหน้า)
 function renderLeaveTable() {
     const tbody = document.getElementById('leave-history-body');
+    if(!tbody) return;
     const searchInput = document.getElementById('search-leave');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
-    tbody.innerHTML = ''; // ล้างข้อมูลเก่าก่อน
+    tbody.innerHTML = ''; 
 
-    // 🌟 กรองข้อมูลตามคำค้นหา (ค้นหาจาก ประเภทการลา หรือ สถานะ)
     let filteredRecords = allLeaveRecords.filter(record => {
         const typeName = record.leave_type === 'Sick Leave' ? 'ลาป่วย' : record.leave_type === 'Personal Leave' ? 'ลากิจ' : 'ลาพักร้อน';
         const statusName = record.status === 'pending' ? 'รออนุมัติ' : record.status === 'approved' ? 'อนุมัติแล้ว' : 'ไม่อนุมัติ';
-
-        // ถ้ารวมคำค้นหาแล้วตรงกับประเภท หรือ สถานะ ให้แสดง (เปลี่ยนไปดึงฟิลด์อื่นมาค้นหาเพิ่มได้)
         return typeName.includes(searchTerm) || statusName.includes(searchTerm);
     });
 
     if (filteredRecords.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center;">ไม่พบข้อมูล</td></tr>';
-        renderPagination(0); // ล้างปุ่ม
+        renderPagination(0); 
         return;
     }
 
-    // 🌟 คำนวณการแบ่งหน้า (Pagination Math)
     const totalPages = Math.ceil(filteredRecords.length / leaveItemsPerPage);
-    if (currentLeavePage > totalPages) currentLeavePage = totalPages; // ดักจับถ้าหน้าปัจจุบันเกินหน้าทั้งหมด
+    if (currentLeavePage > totalPages) currentLeavePage = totalPages; 
 
     const startIndex = (currentLeavePage - 1) * leaveItemsPerPage;
     const endIndex = startIndex + leaveItemsPerPage;
-    const recordsToShow = filteredRecords.slice(startIndex, endIndex); // ตัดเอาเฉพาะข้อมูลหน้าที่จะแสดง
+    const recordsToShow = filteredRecords.slice(startIndex, endIndex); 
 
-    // 🌟 วาดตารางข้อมูลที่ตัดมาแล้ว
     recordsToShow.forEach(record => {
         const startStr = record.start_date ? new Date(record.start_date).toLocaleDateString('th-TH') : '-';
         const endStr = record.end_date ? new Date(record.end_date).toLocaleDateString('th-TH') : '-';
-
         let typeName = record.leave_type === 'Sick Leave' ? 'ลาป่วย' : record.leave_type === 'Personal Leave' ? 'ลากิจ' : 'ลาพักร้อน';
 
         let statusBadge = '';
-        if (record.status === 'pending') statusBadge = '<span style="background-color: #ffc107; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 0.85em;">รออนุมัติ</span>';
+        if (record.status === 'pending') statusBadge = '<span style="background-color: #ffc107; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 0.85em;">รอพิจารณา</span>';
         else if (record.status === 'approved') statusBadge = '<span style="background-color: #28a745; color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 0.85em;">อนุมัติแล้ว</span>';
         else statusBadge = '<span style="background-color: #dc3545; color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 0.85em;">ไม่อนุมัติ</span>';
 
@@ -263,19 +239,14 @@ function renderLeaveTable() {
             </tr>
         `;
     });
-
-    // 🌟 วาดปุ่มกดหน้า
     renderPagination(totalPages);
 }
 
-// 3. ฟังก์ชันสร้างปุ่มกดหน้า
 function renderPagination(totalPages) {
     const paginationDiv = document.getElementById('leave-pagination');
     if (!paginationDiv) return;
-
     paginationDiv.innerHTML = '';
-
-    if (totalPages <= 1) return; // ถ้ามีหน้าเดียวไม่ต้องโชว์ปุ่ม
+    if (totalPages <= 1) return; 
 
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
@@ -288,21 +259,18 @@ function renderPagination(totalPages) {
         btn.style.borderRadius = '3px';
         btn.style.cursor = 'pointer';
 
-        // เมื่อกดปุ่ม ให้เปลี่ยนหน้าและวาดตารางใหม่
         btn.addEventListener('click', () => {
             currentLeavePage = i;
             renderLeaveTable();
         });
-
         paginationDiv.appendChild(btn);
     }
 }
 
-// 4. ผูก Event ให้ช่องค้นหาทำงานเวลามีการพิมพ์ (Real-time search)
 const leaveSearchInput = document.getElementById('search-leave');
 if (leaveSearchInput) {
     leaveSearchInput.addEventListener('input', () => {
-        currentLeavePage = 1; // เมื่อพิมพ์ค้นหา ให้เด้งกลับมาหน้า 1 เสมอ
+        currentLeavePage = 1; 
         renderLeaveTable();
     });
 }
@@ -363,5 +331,124 @@ async function loadUserProfile() {
 
     } catch (err) {
         console.error("Profile Load Error", err);
+    }
+}
+
+// ==========================================
+// 📊 6. โหลดข้อมูลหน้า Dashboard พนักงาน
+// ==========================================
+async function loadEmployeeDashboard() {
+    if (!empId) return;
+
+    try {
+        // 1. ดึงโควตาวันลา
+        const resProfile = await axios.get(`http://localhost:1304/api/employee/profile/${empId}`);
+        if (resProfile.data) {
+            const emp = resProfile.data;
+            const sickRemain = emp.sick_leave_remaining ?? 30;
+            const personalRemain = emp.personal_leave_remaining ?? 6;
+            const annualRemain = emp.annual_leave_remaining ?? 6;
+
+            const sickUsed = 30 - sickRemain;
+            const personalUsed = 6 - personalRemain;
+            const annualUsed = 6 - annualRemain;
+
+            document.getElementById('dash-sick-used').innerText = sickUsed;
+            document.getElementById('dash-sick-remain').innerText = sickRemain;
+            document.getElementById('dash-sick-progress').style.width = `${(sickUsed / 30) * 100}%`;
+
+            document.getElementById('dash-personal-used').innerText = personalUsed;
+            document.getElementById('dash-personal-remain').innerText = personalRemain;
+            document.getElementById('dash-personal-progress').style.width = `${(personalUsed / 6) * 100}%`;
+
+            document.getElementById('dash-annual-used').innerText = annualUsed;
+            document.getElementById('dash-annual-remain').innerText = annualRemain;
+            document.getElementById('dash-annual-progress').style.width = `${(annualUsed / 6) * 100}%`;
+        }
+
+        // 2. ดึงประวัติการลา 3 อันดับล่าสุด
+        const resHistory = await axios.get(`http://localhost:1304/api/leave/history/${empId}`);
+        const tbody = document.getElementById('dash-recent-leave-body');
+        const myLeaves = resHistory.data;
+
+        if (!tbody) return;
+
+        if (myLeaves.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; color: #999;">ยังไม่มีประวัติการลางาน</td></tr>';
+        } else {
+            const recentLeaves = myLeaves.slice(0, 3);
+            tbody.innerHTML = recentLeaves.map(leave => {
+                let statusColor = leave.status === 'approved' ? '#28a745' : leave.status === 'rejected' ? '#dc3545' : '#f39c12';
+                let statusText = leave.status === 'approved' ? 'อนุมัติแล้ว' : leave.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอพิจารณา';
+                let typeName = leave.leave_type === 'Sick Leave' ? 'ลาป่วย' : leave.leave_type === 'Personal Leave' ? 'ลากิจ' : 'ลาพักร้อน';
+                
+                const startDate = new Date(leave.start_date).toLocaleDateString('th-TH');
+                const endDate = new Date(leave.end_date).toLocaleDateString('th-TH');
+                const dateShow = startDate === endDate ? startDate : `${startDate} ถึง ${endDate}`;
+
+                return `
+                    <tr style="border-bottom: 1px solid #f9f9f9;">
+                        <td style="padding: 12px; font-weight: bold; color: #2c3e50;">${typeName}</td>
+                        <td style="color: #3498db;">${dateShow}</td>
+                        <td><span style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;">${statusText}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 3. ดึงข้อมูลสลิปเงินเดือนล่าสุด (โชว์แบบเข้ารหัส)
+        const resSalary = await axios.get(`http://localhost:1304/api/admin/salary-report`);
+        const mySalary = resSalary.data.find(emp => emp.emp_id === empId);
+        
+        const payslipDiv = document.getElementById('dash-payslip-info');
+        const btnPayslip = document.getElementById('btn-view-payslip');
+
+        if (!payslipDiv || !btnPayslip) return;
+
+        if (!mySalary) {
+            payslipDiv.innerHTML = `
+                <i class="fas fa-box-open" style="font-size: 3em; color: #ecf0f1; margin-bottom: 10px;"></i>
+                <p style="margin: 0; color: #7f8c8d;">ยังไม่มีสลิปเงินเดือนในระบบ</p>
+            `;
+        } else {
+            const today = new Date();
+            const monthName = today.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+            const netPay = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(mySalary.totalPay || 0);
+
+            payslipDiv.innerHTML = `
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; display: inline-block; width: 100%; box-sizing: border-box; border: 1px dashed #ccc;">
+                    <p style="margin: 0 0 5px 0; color: #7f8c8d; font-size: 0.9em;">รอบการจ่ายเงิน</p>
+                    <h4 style="margin: 0 0 15px 0; color: #2c3e50; font-size: 1.2em;">${monthName}</h4>
+                    <p style="margin: 0; color: #7f8c8d; font-size: 0.85em;">ยอดรับสุทธิ</p>
+                    <h2 id="secret-salary" style="margin: 5px 0 0 0; color: #27ae60; letter-spacing: 2px;">฿ ** *** **</h2>
+                </div>
+            `;
+            
+            btnPayslip.disabled = false;
+            btnPayslip.style.background = '#27ae60';
+            btnPayslip.style.color = 'white';
+            btnPayslip.style.cursor = 'pointer';
+            btnPayslip.innerHTML = '<i class="fas fa-lock-open"></i> กดเพื่อปลดล็อคดูยอดเงิน';
+            
+            let isUnlocked = false;
+            btnPayslip.onclick = () => {
+                const secretText = document.getElementById('secret-salary');
+                if (!isUnlocked) {
+                    secretText.innerText = netPay; 
+                    secretText.style.letterSpacing = "0px";
+                    btnPayslip.innerHTML = '<i class="fas fa-eye-slash"></i> ซ่อนยอดเงิน';
+                    btnPayslip.style.background = '#e74c3c'; 
+                    isUnlocked = true;
+                } else {
+                    secretText.innerText = "฿ ** *** **"; 
+                    secretText.style.letterSpacing = "2px";
+                    btnPayslip.innerHTML = '<i class="fas fa-lock-open"></i> กดเพื่อปลดล็อคดูยอดเงิน';
+                    btnPayslip.style.background = '#27ae60'; 
+                    isUnlocked = false;
+                }
+            };
+        }
+    } catch (error) {
+        console.error('โหลดข้อมูล Dashboard พนักงานพลาด:', error);
     }
 }
