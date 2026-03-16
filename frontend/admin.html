@@ -2,201 +2,19 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR Dashboard - ระบบจัดการพนักงาน</title>
-    <link rel="stylesheet" href="home.css">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --green:       #00b894;
-            --green-dark:  #00916e;
-            --green-light: #e8f8f4;
-            --teal:        #00cec9;
-            --sidebar-bg:  #1e2d3d;
-            --text-dark:   #1e2d3d;
-            --text-mid:    #5a6a7a;
-            --text-light:  #8e9eae;
-            --border:      #e3eaf0;
-            --bg-page:     #f0f4f7;
-            --white:       #ffffff;
-            --radius-sm:   8px;
-            --radius-md:   12px;
-            --radius-lg:   16px;
-            --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
-            --shadow-md:   0 4px 20px rgba(0,0,0,0.08);
-        }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI','Noto Sans Thai',sans-serif; background: var(--bg-page); color: var(--text-dark); }
-
-        /* LAYOUT */
-        .dashboard-layout { display: flex; height: 100vh; overflow: hidden; }
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .content-area { flex: 1; overflow-y: auto; padding: 24px 28px; }
-
-        /* SIDEBAR */
-        .sidebar { width: 240px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-profile { padding: 20px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-        .profile-icon { font-size: 2rem; color: #f1c40f; flex-shrink: 0; }
-        .profile-info .name { font-weight: 700; font-size: 0.95rem; }
-        .profile-info .status { font-size: 0.75rem; color: var(--green); margin-top: 2px; display: block; }
-        .sidebar-menu { list-style: none; padding: 8px 0; flex: 1; }
-        .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 11px 18px; color: #b8c8d8; text-decoration: none; font-size: 0.88rem; border-left: 3px solid transparent; transition: background 0.2s, color 0.2s; }
-        .sidebar-menu li a:hover { background: #29404f; color: #fff; }
-        .sidebar-menu li a.active { background: rgba(0,184,148,0.15); border-left-color: var(--green); color: var(--green); font-weight: 600; }
-        .sidebar-menu li a i { width: 18px; text-align: center; font-size: 0.9em; }
-        .sidebar-menu li.logout a { color: #ff7675; }
-        .sidebar-menu li.logout a:hover { background: rgba(255,118,117,0.1); color: #ff4d4d; }
-
-        /* TOPBAR */
-        .topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 28px; height: 58px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-        .topbar-title { font-size: 1rem; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 10px; }
-        .topbar-title::before { content: ''; width: 4px; height: 18px; background: var(--green); border-radius: 2px; display: inline-block; }
-        .topbar-badge { background: var(--green-light); color: var(--green-dark); font-size: 0.75rem; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
-
-        /* PAGE TRANSITION */
-        .page-section { animation: fadein 0.22s ease; }
-        @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* SECTION HEADER */
-        .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .section-header h2 { font-size: 1.05rem; font-weight: 700; color: var(--text-dark); }
-        .sh-icon { width: 32px; height: 32px; background: var(--green-light); color: var(--green); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 0.85em; }
-
-        /* STAT CARDS */
-        .stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
-        .stat-card { background: var(--white); border-radius: var(--radius-md); padding: 16px 18px 14px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .sc-label { font-size: 0.82rem; color: var(--text-dark); margin-bottom: 6px; font-weight: 700; }
-        .sc-value { font-size: 2.2rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
-        .sc-sub { font-size: 0.76rem; color: var(--text-mid); font-weight: 500; }
-        .sc-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 2.6rem; opacity: 0.1; }
-        .sc-teal  { border-top: 3px solid #17a2b8; } .sc-teal  .sc-value { color: #17a2b8; }
-        .sc-amber { border-top: 3px solid #e67e22; } .sc-amber .sc-value { color: #e67e22; }
-        .sc-green { border-top: 3px solid var(--green); } .sc-green .sc-value { color: var(--green); }
-        .sc-red   { border-top: 3px solid #e74c3c; } .sc-red   .sc-value { color: #e74c3c; }
-
-        /* CARDS */
-        .card { background: var(--white); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); margin-bottom: 18px; overflow: hidden; }
-        .card-header { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-        .card-header h3 { font-size: 0.88rem; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
-        .card-header h3 i { color: var(--green); }
-        .card-body { padding: 16px 18px; }
-
-        /* TABLES */
-        .tbl-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        thead th { padding: 10px 14px; background: #f5f8fa; font-size: 0.75rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); white-space: nowrap; }
-        tbody td { padding: 11px 14px; font-size: 0.86rem; border-bottom: 1px solid #f3f5f7; color: var(--text-dark); }
-        tbody tr:last-child td { border-bottom: none; }
-        tbody tr:hover td { background: #fafcfd; }
-
-        /* BADGES */
-        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.73rem; font-weight: 700; white-space: nowrap; }
-        .badge-pending  { background: #fff3cd; color: #856404; }
-        .badge-approved { background: var(--green-light); color: var(--green-dark); }
-        .badge-rejected { background: #fdecea; color: #c0392b; }
-        .badge-admin    { background: #fff3cd; color: #856404; }
-        .badge-user     { background: #d1f0ea; color: #00754a; }
-
-        /* LEGEND */
-        .legend-row { display: flex; flex-direction: column; gap: 9px; }
-        .legend-item { display: flex; align-items: center; gap: 9px; font-size: 0.82rem; color: var(--text-mid); }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-        /* SEARCH */
-        .search-bar { position: relative; }
-        .search-bar input { padding: 7px 11px 7px 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.8rem; font-family: inherit; color: var(--text-dark); background: #f8fafc; width: 210px; transition: border-color 0.15s; }
-        .search-bar input:focus { outline: none; border-color: var(--green); background: var(--white); }
-        .search-bar i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 0.75em; pointer-events: none; }
-
-        /* BUTTONS */
-        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; font-family: inherit; border: none; cursor: pointer; transition: all 0.15s; }
-        .btn-primary   { background: var(--green); color: #fff; box-shadow: 0 3px 10px rgba(0,184,148,0.22); }
-        .btn-primary:hover   { background: var(--green-dark); transform: translateY(-1px); }
-        .btn-secondary { background: #3498db; color: #fff; }
-        .btn-secondary:hover { background: #2176ae; }
-        .btn-icon { width: 30px; height: 30px; padding: 0; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.78em; border: none; cursor: pointer; transition: all 0.15s; }
-        .btn-icon-edit   { background: #fff3cd; color: #d68900; }
-        .btn-icon-edit:hover   { background: #ffeaa7; }
-        .btn-icon-delete { background: #fdecea; color: #c0392b; }
-        .btn-icon-delete:hover { background: #fad4d4; }
-        .btn-icon-approve { background: var(--green-light); color: var(--green-dark); }
-        .btn-icon-approve:hover { background: #c5f0e4; }
-        .btn-icon-reject  { background: #fdecea; color: #c0392b; }
-        .btn-icon-reject:hover  { background: #fad4d4; }
-        .actions-cell { display: flex; gap: 6px; justify-content: center; }
-
-        /* EMP TABLE */
-        .emp-name { font-weight: 600; font-size: 0.86rem; }
-        .emp-sub  { font-size: 0.73rem; color: var(--text-light); margin-top: 1px; }
-
-        /* ADD EMPLOYEE */
-        .add-emp-card { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; max-width: 740px; margin-bottom: 20px; }
-        .add-emp-header { display: flex; align-items: center; gap: 14px; padding: 15px 20px; background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%); color: #fff; }
-        .add-emp-header-icon { width: 38px; height: 38px; border-radius: 9px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1em; flex-shrink: 0; }
-        .add-emp-header-title { font-size: 0.93rem; font-weight: 700; }
-        .add-emp-header-sub { font-size: 0.73rem; opacity: 0.82; margin-top: 2px; }
-        .add-emp-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
-        .add-emp-section { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--green); padding-bottom: 5px; border-bottom: 1.5px solid var(--green-light); }
-        .add-emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .add-emp-field { display: flex; flex-direction: column; gap: 5px; }
-        .add-emp-label { font-size: 0.76rem; font-weight: 600; color: var(--text-mid); display: flex; align-items: center; gap: 5px; }
-        .add-emp-label i { color: var(--green); font-size: 0.82em; width: 13px; }
-        .add-emp-input { background: #f8fafb; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 11px; font-size: 0.86rem; font-family: inherit; color: var(--text-dark); transition: border-color 0.15s, box-shadow 0.15s; width: 100%; }
-        .add-emp-input:focus { outline: none; border-color: var(--green); background: var(--white); box-shadow: 0 0 0 3px rgba(0,184,148,0.1); }
-        .add-emp-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300b894' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 11px center; padding-right: 30px; }
-        .add-emp-divider { border: none; border-top: 1px solid var(--border); }
-        .add-emp-submit { width: 100%; padding: 11px; background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(0,184,148,0.26); transition: opacity 0.15s, transform 0.1s; }
-        .add-emp-submit:hover { opacity: 0.9; transform: translateY(-1px); }
-        .add-emp-submit:active { transform: scale(0.98); }
-
-        /* REPORT */
-        .report-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
-        .toolbar-right { display: flex; gap: 8px; align-items: center; }
-        input[type="month"] { padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.8rem; font-family: inherit; color: var(--text-dark); background: #f8fafc; }
-        input[type="month"]:focus { outline: none; border-color: var(--green); }
-
-        /* ANNOUNCEMENTS */
-        .announce-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 18px; align-items: flex-start; }
-        .announce-field { margin-bottom: 13px; }
-        .announce-field label { display: block; font-size: 0.73rem; font-weight: 700; color: var(--text-mid); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
-        .announce-input { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.86rem; font-family: inherit; color: var(--text-dark); background: #f8fafb; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
-        .announce-input:focus { outline: none; border-color: var(--green); background: var(--white); box-shadow: 0 0 0 3px rgba(0,184,148,0.1); }
-        .announce-textarea { min-height: 130px; resize: vertical; line-height: 1.6; }
-        .announce-list { display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; padding-right: 2px; }
-        .announce-item { background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-        .announce-item-title { font-weight: 700; font-size: 0.86rem; color: var(--text-dark); margin-bottom: 3px; }
-        .announce-item-body { font-size: 0.78rem; color: var(--text-mid); line-height: 1.5; }
-        .announce-item-date { font-size: 0.7rem; color: var(--text-light); margin-top: 5px; }
-
-        /* MODAL */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; }
-        .modal-overlay.open { display: flex; }
-        .modal-box { background: var(--white); border-radius: var(--radius-lg); width: 460px; max-width: 94vw; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-        .modal-header { padding: 15px 20px; background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff; display: flex; align-items: center; gap: 10px; }
-        .modal-header h3 { font-size: 0.93rem; font-weight: 700; }
-        .modal-body { padding: 18px 20px; }
-        .modal-field { margin-bottom: 12px; }
-        .modal-field:last-child { margin-bottom: 0; }
-        .modal-field label { display: block; font-size: 0.73rem; font-weight: 700; color: var(--text-mid); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
-        .modal-input { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.86rem; font-family: inherit; color: var(--text-dark); background: #f8fafb; box-sizing: border-box; }
-        .modal-input:focus { outline: none; border-color: #f39c12; box-shadow: 0 0 0 3px rgba(243,156,18,0.12); }
-        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .modal-footer { display: flex; gap: 10px; padding: 0 20px 18px; }
-        .modal-footer .btn { flex: 1; justify-content: center; padding: 10px; }
-        .btn-cancel { background: #f0f2f5; color: var(--text-mid); }
-        .btn-cancel:hover { background: #e0e4e8; }
-
-        /* QUOTA COLORS */
-        .q-sick   { color: #e74c3c; font-weight: 700; }
-        .q-person { color: #e67e22; font-weight: 700; }
-        .q-annual { color: var(--green); font-weight: 700; }
-    </style>
 </head>
 <body>
 <div class="dashboard-layout">
 
+    <!-- ═══ SIDEBAR ═══ -->
     <aside class="sidebar">
         <div class="sidebar-profile">
             <i class="fas fa-user-tie profile-icon"></i>
@@ -206,14 +24,25 @@
             </div>
         </div>
         <ul class="sidebar-menu">
-            <li><a href="#" class="active" onclick="switchPage(event,'page-approve-leave',this)"><i class="fas fa-tachometer-alt"></i> แดชบอร์ด</a></li>
-            <li><a href="#" onclick="switchPage(event,'page-manage-employees',this)"><i class="fas fa-users"></i> จัดการพนักงาน</a></li>
-            <li><a href="#" onclick="switchPage(event,'page-report',this)"><i class="fas fa-chart-bar"></i> รายงานเงินเดือน</a></li>
-            <li><a href="#" onclick="switchPage(event,'page-announcements',this)"><i class="fas fa-bullhorn"></i> ประกาศข่าวสาร</a></li>
-            <li class="logout"><a href="login.html"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</a></li>
+            <li><a href="#" class="active" onclick="switchPage(event,'page-approve-leave',this)">
+                <i class="fas fa-tachometer-alt"></i> แดชบอร์ด
+            </a></li>
+            <li><a href="#" onclick="switchPage(event,'page-manage-employees',this)">
+                <i class="fas fa-users"></i> จัดการพนักงาน
+            </a></li>
+            <li><a href="#" onclick="switchPage(event,'page-report',this)">
+                <i class="fas fa-chart-bar"></i> รายงานเงินเดือน
+            </a></li>
+            <li><a href="#" onclick="switchPage(event,'page-announcements',this)">
+                <i class="fas fa-bullhorn"></i> ประกาศข่าวสาร
+            </a></li>
+            <li class="logout"><a href="login.html">
+                <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+            </a></li>
         </ul>
     </aside>
 
+    <!-- ═══ MAIN ═══ -->
     <main class="main-content">
         <header class="topbar">
             <div class="topbar-title">HR Management System</div>
@@ -222,8 +51,8 @@
 
         <div class="content-area">
 
-            <!-- PAGE: DASHBOARD -->
-            <div id="page-approve-leave" class="page-section" style="display:block;">
+            <!-- ═══ PAGE: DASHBOARD ═══ -->
+            <div id="page-approve-leave" class="page-section active">
                 <div class="section-header">
                     <div class="sh-icon"><i class="fas fa-tachometer-alt"></i></div>
                     <h2>แดชบอร์ดภาพรวม</h2>
@@ -256,104 +85,91 @@
                     </div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:18px;">
+                <div class="flex-col">
 
-                    <!-- Row 1: Pending leaves table -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-clipboard-list"></i> รายการขอลางาน (รอพิจารณา)</h3>
-                        </div>
-                        <div class="tbl-wrap">
-                            <table>
-                                <thead><tr>
-                                    <th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>ประเภท</th>
-                                    <th>เหตุผล</th><th>วันที่ลา</th><th>เอกสาร</th><th>จัดการ</th>
-                                </tr></thead>
-                                <tbody id="admin-leave-table-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <!-- รายการขอลางาน + โควตาวันลา (เคียงกัน) -->
+                    <div class="grid-leave-quota">
 
-                    <!-- Row 2: Leave history + Quota side by side -->
-                    <div style="display:grid; grid-template-columns:1fr 380px; gap:18px; align-items:flex-start;">
-
-                        <!-- History table -->
-                        <div class="card" style="margin-bottom:0;">
+                        <div class="card mb-0">
                             <div class="card-header">
-                                <h3><i class="fas fa-history"></i> ประวัติการลางานทั้งหมด</h3>
-                                <div style="display:flex; align-items:center; gap:16px;">
-                                    <div style="display:flex; align-items:center; gap:12px; font-size:0.75rem; color:var(--text-mid); font-weight:600;">
-                                        <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#e67e22;display:inline-block;"></span>รอพิจารณา</span>
-                                        <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>อนุมัติแล้ว</span>
-                                        <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#e74c3c;display:inline-block;"></span>ไม่อนุมัติ</span>
-                                    </div>
-                                    <div class="search-bar">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" id="search-admin-leave" placeholder="ค้นหารหัส หรือชื่อ...">
-                                    </div>
-                                </div>
+                                <h3><i class="fas fa-clipboard-list"></i> รายการขอลางาน (รอพิจารณา)</h3>
                             </div>
                             <div class="tbl-wrap">
-                                <table style="table-layout:fixed; width:100%;">
-                                    <colgroup>
-                                        <col style="width:100px;">
-                                        <col style="width:160px;">
-                                        <col style="width:80px;">
-                                        <col style="width:150px;">
-                                        <col style="width:80px;">
-                                        <col style="width:110px;">
-                                    </colgroup>
+                                <table>
                                     <thead><tr>
-                                        <th style="text-align:center;">วันที่ส่ง</th>
-                                        <th style="text-align:left;">ชื่อ-นามสกุล</th>
-                                        <th style="text-align:center;">ประเภท</th>
-                                        <th style="text-align:center;">วันที่ลา</th>
-                                        <th style="text-align:center;">จำนวนวัน</th>
-                                        <th style="text-align:center;">สถานะ</th>
+                                        <th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>ประเภท</th>
+                                        <th>เหตุผล</th><th>วันที่ลา</th><th>เอกสาร</th><th>จัดการ</th>
                                     </tr></thead>
-                                    <tbody id="all-leave-history-body"></tbody>
+                                    <tbody id="admin-leave-table-body"></tbody>
                                 </table>
                             </div>
                         </div>
 
-                        <!-- Quota table — wider to prevent name wrap -->
-                        <div class="card" style="margin-bottom:0;">
+                        <div class="card mb-0">
                             <div class="card-header"><h3><i class="fas fa-calendar-check"></i> โควตาวันลา</h3></div>
                             <div class="tbl-wrap">
-                                <table style="table-layout:fixed; width:100%;">
-                                    <colgroup>
-                                        <col style="width:70px;">
-                                        <col style="width:auto;">
-                                        <col style="width:44px;">
-                                        <col style="width:44px;">
-                                        <col style="width:44px;">
-                                    </colgroup>
+                                <table id="tbl-quota">
+                                    <colgroup><col><col><col><col><col></colgroup>
                                     <thead><tr>
-                                        <th style="text-align:center;">ID</th>
-                                        <th style="text-align:left;">ชื่อ</th>
-                                        <th style="text-align:center; color:#e74c3c; font-size:0.7rem;">ป่วย</th>
-                                        <th style="text-align:center; color:#e67e22; font-size:0.7rem;">กิจ</th>
-                                        <th style="text-align:center; color:var(--green); font-size:0.7rem;">พัก</th>
+                                        <th>ID</th>
+                                        <th class="col-name">ชื่อ</th>
+                                        <th class="col-sick">ป่วย</th>
+                                        <th class="col-personal">กิจ</th>
+                                        <th class="col-annual">พัก</th>
                                     </tr></thead>
                                     <tbody id="quota-list-body"></tbody>
                                 </table>
                             </div>
                         </div>
-                    </div><!-- end 2-col grid -->
-                </div><!-- end flex column -->
+
+                    </div>
+
+                    <!-- ประวัติลาทั้งหมด (เต็มความกว้าง) -->
+                    <div class="card mb-0">
+                        <div class="card-header">
+                            <h3><i class="fas fa-history"></i> ประวัติการลางานทั้งหมด</h3>
+                            <div class="card-header-actions">
+                                <div class="legend-row">
+                                    <span class="legend-item"><span class="dot dot-pending"></span>รอพิจารณา</span>
+                                    <span class="legend-item"><span class="dot dot-approved"></span>อนุมัติแล้ว</span>
+                                    <span class="legend-item"><span class="dot dot-rejected"></span>ไม่อนุมัติ</span>
+                                </div>
+                                <div class="search-bar">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="search-admin-leave" placeholder="ค้นหารหัส หรือชื่อ...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tbl-wrap">
+                            <table id="tbl-leave-all">
+                                <colgroup><col><col><col><col><col><col></colgroup>
+                                <thead><tr>
+                                    <th>วันที่ส่ง</th>
+                                    <th class="col-name">ชื่อ-นามสกุล</th>
+                                    <th>ประเภท</th>
+                                    <th>วันที่ลา</th>
+                                    <th>จำนวนวัน</th>
+                                    <th>สถานะ</th>
+                                </tr></thead>
+                                <tbody id="all-leave-history-body"></tbody>
+                            </table>
+                        </div>
+                        <div id="admin-leave-pagination" class="pagination-row"></div>
+                    </div>
+
+                </div>
             </div>
 
-            <!-- PAGE: MANAGE EMPLOYEES -->
-            <div id="page-manage-employees" class="page-section" style="display:none;">
+            <!-- ═══ PAGE: MANAGE EMPLOYEES ═══ -->
+            <div id="page-manage-employees" class="page-section">
                 <div class="section-header">
                     <div class="sh-icon"><i class="fas fa-users"></i></div>
                     <h2>จัดการพนักงาน</h2>
                 </div>
 
-                <div style="display:grid; grid-template-columns:380px 1fr; gap:18px; align-items:flex-start;">
+                <div class="grid-emp">
 
-                    <!-- Left: Add Form (fixed width, sticks to top) -->
-                    <div class="add-emp-card" style="margin-bottom:0; position:sticky; top:0;">
+                    <div class="add-emp-card sticky mb-0">
                         <div class="add-emp-header">
                             <div class="add-emp-header-icon"><i class="fas fa-user-plus"></i></div>
                             <div>
@@ -406,64 +222,98 @@
                             </div>
 
                             <div class="add-emp-divider"></div>
-                            <button type="submit" class="add-emp-submit"><i class="fas fa-user-check"></i>บันทึกเพิ่มพนักงาน</button>
+                            <button type="submit" class="add-emp-submit">
+                                <i class="fas fa-user-check"></i>บันทึกเพิ่มพนักงาน
+                            </button>
                         </form>
                     </div>
 
-                    <!-- Right: Employee Table -->
-                    <div class="card" style="margin-bottom:0;">
+                    <div class="card mb-0">
                         <div class="card-header"><h3><i class="fas fa-list"></i>รายชื่อพนักงานทั้งหมด</h3></div>
                         <div class="tbl-wrap">
-                            <table style="table-layout:fixed; width:100%;">
-                                <colgroup>
-                                    <col style="width:110px;">
-                                    <col style="width:auto;">
-                                    <col style="width:130px;">
-                                    <col style="width:100px;">
-                                </colgroup>
+                            <table id="tbl-employees">
+                                <colgroup><col><col><col><col></colgroup>
                                 <thead><tr>
-                                    <th style="text-align:center;">ID</th>
-                                    <th style="text-align:left;">ชื่อ-นามสกุล</th>
-                                    <th style="text-align:center;">สิทธิ์</th>
-                                    <th style="text-align:center;">จัดการ</th>
+                                    <th>ID</th>
+                                    <th class="col-name">ชื่อ-นามสกุล</th>
+                                    <th>สิทธิ์</th>
+                                    <th>จัดการ</th>
                                 </tr></thead>
                                 <tbody id="employee-list-body"></tbody>
                             </table>
                         </div>
                     </div>
+
                 </div>
             </div>
 
-            <!-- PAGE: REPORT -->
-            <div id="page-report" class="page-section" style="display:none;">
+            <!-- ═══ PAGE: REPORT ═══ -->
+            <div id="page-report" class="page-section">
                 <div class="report-toolbar">
-                    <div class="section-header" style="margin:0;">
+                    <div class="section-header no-margin">
                         <div class="sh-icon"><i class="fas fa-chart-bar"></i></div>
                         <h2>รายงานสรุปเงินเดือน</h2>
                     </div>
                     <div class="toolbar-right">
                         <input type="month" id="report-month">
-                        <button onclick="loadSalaryReport()" class="btn btn-secondary"><i class="fas fa-search"></i>ค้นหา</button>
-                        <button onclick="exportSalaryCSV()" class="btn btn-primary"><i class="fas fa-file-csv"></i>ดาวน์โหลด CSV</button>
+                        <button onclick="loadSalaryReport()" class="btn btn-secondary">
+                            <i class="fas fa-search"></i>ค้นหา
+                        </button>
+                        <button onclick="exportSalaryCSV()" class="btn btn-primary">
+                            <i class="fas fa-file-csv"></i>ดาวน์โหลด CSV
+                        </button>
                     </div>
                 </div>
 
-                <div class="card" style="margin-bottom:18px;">
-                    <div class="card-header"><h3><i class="fas fa-chart-bar"></i>กราฟสรุปชั่วโมงทำงานและ OT</h3></div>
-                    <div class="card-body"><div style="height:270px;"><canvas id="workHoursChart"></canvas></div></div>
+                <div class="stat-row">
+                    <div class="stat-card sc-teal">
+                        <div class="sc-label">พนักงานทั้งหมด</div>
+                        <div class="sc-value" id="rpt-emp-count">—</div>
+                        <div class="sc-sub">คน</div>
+                        <div class="sc-icon"><i class="fas fa-users"></i></div>
+                    </div>
+                    <div class="stat-card sc-green">
+                        <div class="sc-label">ยอดจ่ายรวม</div>
+                        <div class="sc-value" id="rpt-total-pay">—</div>
+                        <div class="sc-sub">บาท</div>
+                        <div class="sc-icon"><i class="fas fa-baht-sign"></i></div>
+                    </div>
+                    <div class="stat-card sc-amber">
+                        <div class="sc-label">ชม. ทำงานรวม</div>
+                        <div class="sc-value" id="rpt-total-work">—</div>
+                        <div class="sc-sub">ชั่วโมง</div>
+                        <div class="sc-icon"><i class="fas fa-clock"></i></div>
+                    </div>
+                    <div class="stat-card sc-red">
+                        <div class="sc-label">ชม. OT รวม</div>
+                        <div class="sc-value" id="rpt-total-ot">—</div>
+                        <div class="sc-sub">ชั่วโมง</div>
+                        <div class="sc-icon"><i class="fas fa-hourglass-half"></i></div>
+                    </div>
                 </div>
 
                 <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-bar"></i>กราฟสรุปชั่วโมงทำงานและ OT</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="workHoursChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-table"></i>ตารางสรุปรายพนักงาน</h3></div>
                     <div class="tbl-wrap">
                         <table id="salary-table">
+                            <colgroup><col><col><col><col><col><col><col></colgroup>
                             <thead><tr>
                                 <th>ID</th>
-                                <th style="text-align:left;">ชื่อ-นามสกุล</th>
-                                <th>ทำงาน (ชม.)</th>
-                                <th>OT (ชม.)</th>
-                                <th>ลาป่วย (วัน)</th>
-                                <th>ลากิจ (วัน)</th>
-                                <th>ยอดสุทธิ (฿)</th>
+                                <th class="col-name">ชื่อ-นามสกุล</th>
+                                <th class="col-work">ทำงาน (ชม.)</th>
+                                <th class="col-ot">OT (ชม.)</th>
+                                <th class="col-sick">ลาป่วย (วัน)</th>
+                                <th class="col-personal">ลากิจ (วัน)</th>
+                                <th class="col-total">ยอดสุทธิ (฿)</th>
                             </tr></thead>
                             <tbody id="salary-report-body"></tbody>
                         </table>
@@ -471,8 +321,8 @@
                 </div>
             </div>
 
-            <!-- PAGE: ANNOUNCEMENTS -->
-            <div id="page-announcements" class="page-section" style="display:none;">
+            <!-- ═══ PAGE: ANNOUNCEMENTS ═══ -->
+            <div id="page-announcements" class="page-section">
                 <div class="section-header">
                     <div class="sh-icon"><i class="fas fa-bullhorn"></i></div>
                     <h2>จัดการประกาศข่าวสาร</h2>
@@ -491,7 +341,7 @@
                                     <label>รายละเอียดเนื้อหา</label>
                                     <textarea id="announce-content" class="announce-input announce-textarea" placeholder="พิมพ์รายละเอียดที่นี่..." required></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:11px; font-size:0.88rem;">
+                                <button type="submit" class="btn btn-primary btn-announce-submit">
                                     <i class="fas fa-paper-plane"></i>เผยแพร่ประกาศ
                                 </button>
                             </form>
@@ -502,7 +352,7 @@
                         <div class="card-header"><h3><i class="fas fa-list-alt"></i>ประกาศที่เผยแพร่แล้ว</h3></div>
                         <div class="card-body">
                             <div class="announce-list" id="admin-announcement-list">
-                                <p style="text-align:center;color:var(--text-light);padding:20px;">กำลังโหลดประกาศ...</p>
+                                <p class="announce-loading">กำลังโหลดประกาศ...</p>
                             </div>
                         </div>
                     </div>
@@ -521,71 +371,43 @@
             <h3>แก้ไขข้อมูลพนักงาน</h3>
         </div>
         <form id="edit-employee-form">
-        <div class="modal-body">
-            <input type="hidden" id="edit-emp-id">
-            <div class="modal-grid">
-                <div class="modal-field" style="margin:0;">
-                    <label>ชื่อ</label>
-                    <input type="text" id="edit-first-name" class="modal-input" placeholder="ชื่อ" required>
+            <div class="modal-body">
+                <input type="hidden" id="edit-emp-id">
+                <div class="modal-grid">
+                    <div class="modal-field">
+                        <label>ชื่อ</label>
+                        <input type="text" id="edit-first-name" class="modal-input" placeholder="ชื่อ" required>
+                    </div>
+                    <div class="modal-field">
+                        <label>นามสกุล</label>
+                        <input type="text" id="edit-last-name" class="modal-input" placeholder="นามสกุล" required>
+                    </div>
                 </div>
-                <div class="modal-field" style="margin:0;">
-                    <label>นามสกุล</label>
-                    <input type="text" id="edit-last-name" class="modal-input" placeholder="นามสกุล" required>
+                <div class="modal-field">
+                    <label>แผนก</label>
+                    <select id="edit-dept" class="modal-input"></select>
+                </div>
+                <div class="modal-field">
+                    <label>ค่าจ้าง/ชม. (฿)</label>
+                    <input type="number" id="edit-hourly-rate" class="modal-input" placeholder="0.00" required>
+                </div>
+                <div class="modal-field">
+                    <label>สิทธิ์การใช้งาน</label>
+                    <select id="edit-role" class="modal-input">
+                        <option value="user">👤 พนักงานทั่วไป</option>
+                        <option value="admin">🛡️ HR / Admin</option>
+                    </select>
                 </div>
             </div>
-            <div class="modal-field">
-                <label>แผนก</label>
-                <select id="edit-dept" class="modal-input"></select>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">บันทึก</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-cancel">ยกเลิก</button>
             </div>
-            <div class="modal-field">
-                <label>ค่าจ้าง/ชม. (฿)</label>
-                <input type="number" id="edit-hourly-rate" class="modal-input" placeholder="0.00" required>
-            </div>
-            <div class="modal-field">
-                <label>สิทธิ์การใช้งาน</label>
-                <select id="edit-role" class="modal-input">
-                    <option value="user">👤 พนักงานทั่วไป</option>
-                    <option value="admin">🛡️ HR / Admin</option>
-                </select>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="submit" class="btn btn-primary">บันทึก</button>
-            <button type="button" onclick="closeEditModal()" class="btn btn-cancel">ยกเลิก</button>
-        </div>
         </form>
     </div>
 </div>
 
+<script src="utils.js"></script>
 <script src="admin.js"></script>
-<script>
-function scrollToTable() {
-    const el = document.getElementById('admin-leave-table-body');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-}
-
-// โหลดแผนกใส่ทั้ง #add-dept และ #edit-dept
-async function loadDepartmentsIntoSelects() {
-    try {
-        const res = await axios.get('http://localhost:1304/api/admin/departments');
-        const depts = res.data;
-        ['add-dept', 'edit-dept'].forEach(id => {
-            const sel = document.getElementById(id);
-            if (!sel) return;
-            while (sel.options.length > 1) sel.remove(1);
-            depts.forEach(d => {
-                const o = document.createElement('option');
-                o.value = d.dept_id;
-                o.textContent = d.dept_name;
-                sel.appendChild(o);
-            });
-        });
-    } catch (e) {
-        console.warn('ไม่สามารถโหลดแผนกได้:', e.message);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', loadDepartmentsIntoSelects);
-</script>
 </body>
 </html>

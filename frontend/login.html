@@ -4,56 +4,108 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดการพนักงาน</title>
-    <link rel="stylesheet" href="login-cs.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --green:#00b894; --green-dark:#00916e; --teal:#00cec9; --dark:#1e2d3d; }
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Segoe UI','Noto Sans Thai',sans-serif; background:linear-gradient(135deg,#e8f8f4 0%,#f0f9f7 50%,#e0f5f0 100%); min-height:100vh; display:flex; justify-content:center; align-items:center; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+        /* WELCOME */
+        #welcome-screen { text-align:center; animation:fadeUp 0.6s ease; }
+        .logo-circle { width:80px;height:80px;background:linear-gradient(135deg,var(--green),var(--teal));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 24px rgba(0,184,148,.35); }
+        .logo-circle i { font-size:2rem;color:#fff; }
+        .system-title { font-size:2.8rem;font-weight:800;color:var(--dark);letter-spacing:-0.5px;margin-bottom:6px; }
+        .system-title span { color:var(--green); }
+        .system-subtitle { font-size:1rem;color:#6b8a7a;margin-bottom:36px;letter-spacing:1px; }
+        .enter-button { display:inline-flex;align-items:center;gap:10px;padding:16px 44px;background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;font-size:1rem;font-weight:700;font-family:inherit;border:none;border-radius:50px;cursor:pointer;box-shadow:0 8px 24px rgba(0,184,148,.35);transition:all .25s; }
+        .enter-button:hover { transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,184,148,.45); }
+        .enter-button:active { transform:scale(0.97); }
+
+        /* LOGIN */
+        #login-screen { display:none;animation:fadeUp .45s ease;width:100%;max-width:460px;padding:20px; }
+        .form-card { background:#fff;border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.10);overflow:hidden; }
+        .form-card-header { background:linear-gradient(135deg,var(--green),var(--teal));padding:28px 32px 24px;text-align:center;color:#fff; }
+        .hdr-icon { width:52px;height:52px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:1.4rem; }
+        .form-card-header h2 { font-size:1.2rem;font-weight:700;margin-bottom:4px; }
+        .form-card-header p  { font-size:0.8rem;opacity:.85; }
+        .form-card-body { padding:28px 32px 32px; }
+
+        .input-group { margin-bottom:18px; }
+        .input-group label { display:flex;align-items:center;gap:7px;font-size:0.78rem;font-weight:700;color:#5a6a7a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px; }
+        .input-group label i { color:var(--green);font-size:.9em; }
+        .input-group input { width:100%;padding:12px 14px;background:#f8fafb;border:1.5px solid #e3eaf0;border-radius:10px;font-size:.95rem;font-family:inherit;color:var(--dark);transition:all .15s; }
+        .input-group input:focus { outline:none;border-color:var(--green);background:#fff;box-shadow:0 0 0 3px rgba(0,184,148,.12); }
+
+        #login-error { display:none;background:#fdecea;color:#c0392b;border:1px solid #f5c6cb;border-radius:8px;padding:10px 14px;font-size:.82rem;font-weight:600;margin-bottom:16px;align-items:center;gap:8px; }
+        #login-error.show { display:flex; }
+
+        .btn-submit { width:100%;padding:14px;background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(0,184,148,.3);transition:all .2s;margin-top:4px; }
+        .btn-submit:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,184,148,.4); }
+        .btn-submit:disabled { opacity:.65;cursor:not-allowed; }
+        .back-link { display:block;text-align:center;margin-top:18px;font-size:.82rem;color:#8e9eae;cursor:pointer;text-decoration:none;transition:color .2s; }
+        .back-link:hover { color:var(--green); }
+    </style>
 </head>
 <body>
 
-    <!-- หน้าแรก Welcome -->
-    <div id="welcome-screen">
-        <h1 class="system-title">Employee System</h1>
-        <p class="system-subtitle">ระบบจัดการพนักงาน</p>
-        <button class="enter-button" onclick="showLogin()">เข้าสู่ระบบบันทึกเวลา</button>
-    </div>
+<div id="welcome-screen">
+    <div class="logo-circle"><i class="fas fa-building"></i></div>
+    <h1 class="system-title">Employee<span>System</span></h1>
+    <p class="system-subtitle">ระบบจัดการพนักงาน</p>
+    <button class="enter-button" onclick="showLogin()">
+        <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบบันทึกเวลา
+    </button>
+</div>
 
-    <!-- หน้า Login Form -->
-    <div id="login-screen">
-        <div class="form-container">
-            <h2>กรอกรหัสพนักงาน</h2>
+<div id="login-screen">
+    <div class="form-card">
+        <div class="form-card-header">
+            <div class="hdr-icon"><i class="fas fa-lock-open"></i></div>
+            <h2>เข้าสู่ระบบ</h2>
+            <p>กรอกรหัสพนักงานและรหัสผ่านของคุณ</p>
+        </div>
+        <div class="form-card-body">
+            <div id="login-error">
+                <i class="fas fa-circle-exclamation"></i>
+                <span id="login-error-msg">เกิดข้อผิดพลาด</span>
+            </div>
             <form id="login-form">
                 <div class="input-group">
-                    <label for="emp-id">รหัสพนักงาน (ID)</label>
-                    <input type="text" id="emp-id" name="emp-id" placeholder="เช่น ADMIN00" required>
+                    <label for="emp-id"><i class="fas fa-id-badge"></i> รหัสพนักงาน (ID)</label>
+                    <input type="text" id="emp-id" placeholder="เช่น ADMIN00" required autocomplete="username">
                 </div>
                 <div class="input-group">
-                    <label for="password">รหัสผ่าน</label>
-                    <input type="password" id="password" name="password" placeholder="รหัสผ่าน" required>
+                    <label for="password"><i class="fas fa-lock"></i> รหัสผ่าน</label>
+                    <input type="password" id="password" placeholder="รหัสผ่าน" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn-submit">เข้าสู่ระบบ</button>
+                <button type="submit" class="btn-submit" id="submit-btn">
+                    <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
+                </button>
             </form>
-            <a class="back-link" onclick="showWelcome()">← ย้อนกลับหน้าแรก</a>
+            <a class="back-link" onclick="showWelcome()"><i class="fas fa-arrow-left"></i> ย้อนกลับหน้าแรก</a>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/axios@1.13.2/dist/axios.min.js"></script>
-    <script src="script.js"></script>
-    <script>
-        function showLogin() {
-            const welcome = document.getElementById('welcome-screen');
-            const login   = document.getElementById('login-screen');
-            welcome.style.opacity = '0';
-            setTimeout(() => {
-                welcome.style.display = 'none';
-                login.style.display   = 'block';
-            }, 300);
-        }
-
-        function showWelcome() {
-            const welcome = document.getElementById('welcome-screen');
-            const login   = document.getElementById('login-screen');
-            login.style.display   = 'none';
-            welcome.style.display = 'block';
-            welcome.style.opacity = '1';
-        }
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.13.2/dist/axios.min.js" defer></script>
+<script src="utils.js" defer></script>
+<script src="script.js" defer></script>
+<script>
+    function showLogin() {
+        document.getElementById('welcome-screen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'block';
+        }, 300);
+    }
+    function showWelcome() {
+        document.getElementById('login-screen').style.display = 'none';
+        const w = document.getElementById('welcome-screen');
+        w.style.display = 'block';
+        w.style.opacity = '1';
+        document.getElementById('login-error').classList.remove('show');
+    }
+</script>
 </body>
 </html>

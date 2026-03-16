@@ -1,12 +1,17 @@
-const express = require('express');
-const router = express.Router();
+// ============================================================
+// routes/leaveRoutes.js
+// Routes สำหรับระบบลางาน
+// ============================================================
 
-// ดึง Controller และ Middleware ของคุณมาใช้งาน
+const express        = require('express');
+const router         = express.Router();
 const leaveController = require('../controllers/leaveController');
-const upload = require('../middlewares/upload'); // สำหรับอัปโหลดไฟล์ (ถ้ามี)
+const upload          = require('../middlewares/upload');
+const { verifyToken } = require('../middlewares/authMiddleware');
 
-// เชื่อมเส้นทาง API ไปยังฟังก์ชันใน Controller ที่คุณเขียนไว้
-router.post('/request', upload.single('attachment'), leaveController.requestLeave);
-router.get('/history/:emp_id', leaveController.getLeaveHistory);
+// BUG FIX: เพิ่ม verifyToken ทุก route
+// เดิมไม่มี middleware ป้องกันเลย
+router.post('/request',          verifyToken, upload.single('attachment'), leaveController.requestLeave);
+router.get('/history/:emp_id',   verifyToken, leaveController.getLeaveHistory);
 
 module.exports = router;

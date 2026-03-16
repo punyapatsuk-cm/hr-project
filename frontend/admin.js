@@ -1,222 +1,181 @@
-const empId = localStorage.getItem('employeeId');
-const role = localStorage.getItem('userRole');
+// ============================================================
+// admin.js — หน้า HR Admin
+// ต้องโหลด utils.js ก่อนไฟล์นี้เสมอ
+// ============================================================
 
-if (!empId || role !== 'admin') {
-    alert('❌ คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
-    window.location.href = 'login.html';
-}
+// ── ตรวจสอบสิทธิ์ ─────────────────────────────────────────
+const adminEmpId = localStorage.getItem('employeeId');
+const adminRole  = localStorage.getItem('userRole');
+if (!adminEmpId || adminRole !== 'admin') window.location.href = 'login.html';
 
-// 🌟 1. แก้ไข URL ให้ตรงกับหลังบ้าน (เพิ่ม /admin)
-const API_URL = 'http://localhost:1304/api/admin';
+const API_URL = `${API_BASE}/api/admin`;
 
-// ==========================================
-// 🏢 โหลดข้อมูลแผนก (Departments)
-// ==========================================
+// ── State ────────────────────────────────────────────────────
+let allAdminLeaveRecords = [];
+let currentAdminPage     = 1;
+let workHoursChartInstance = null;
+
+// ============================================================
+// 🏢 1. แผนก
+// ============================================================
 async function loadDepartments() {
     try {
-        const res = await axios.get(`${API_URL}/departments`);
-        const newDept = document.getElementById('new-dept');
+        const { data } = await axios.get(`${API_URL}/departments`, getAuthHeaders());
+        const opts = ['<option value="">— ไม่ระบุแผนก —</option>',
+            ...data.map(d => `<option value="${escapeHtml(d.dept_id||d.id)}">${escapeHtml(d.dept_name||d.name)}</option>`)
+        ].join('');
+        const addDept  = document.getElementById('add-dept');
         const editDept = document.getElementById('edit-dept');
-
-        let options = '<option value="">-- เลือกแผนก --</option>';
-        res.data.forEach(d => {
-            const deptId = d.dept_id || d.id;
-            const deptName = d.dept_name || d.name;
-            options += `<option value="${deptId}">${deptName}</option>`;
-        });
-
-        if (newDept) newDept.innerHTML = options;
-        if (editDept) editDept.innerHTML = options;
-    } catch (err) {
-        console.error("ไม่สามารถโหลดแผนกได้", err);
-    }
+        if (addDept)  addDept.innerHTML  = opts;
+        if (editDept) editDept.innerHTML = opts;
+    } catch (err) { console.error('โหลดแผนกไม่ได้', err); }
 }
 
-// ==========================================
-// 📝 2. ระบบจัดการใบลางาน
-// ==========================================
+// ============================================================
+// 📝 2. ใบลางาน (รอพิจารณา)
+// ============================================================
 async function loadPendingLeaves() {
+    const tbody = document.getElementById('admin-leave-table-body');
+    if (!tbody) return;
     try {
-        const response = await axios.get(`${API_URL}/leaves/pending`);
-        const tbody = document.getElementById('admin-leave-table-body');
-        if (!tbody) return;
+        const { data } = await axios.get(`${API_URL}/leaves/pending`, getAuthHeaders());
+        if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;color:green;text-align:center;">🎉 ไม่มีรายการรอดำเนินการ</td></tr>'; return; }
 
-        tbody.innerHTML = '';
-
-        if (response.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; color: green; text-align: center;">🎉 ไม่มีรายการรอดำเนินการ</td></tr>';
-            return;
-        }
-
-        response.data.forEach(leave => {
-            const start = new Date(leave.start_date);
-            const end = new Date(leave.end_date);
-            const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-            const attachment = leave.attachment
-                ? `<a href="http://localhost:1304/uploads/${leave.attachment}" target="_blank" style="color: #007bff; text-decoration: none;">📄 ดูเอกสาร</a>`
+        tbody.innerHTML = data.map(leave => {
+            const start    = new Date(leave.start_date);
+            const end      = new Date(leave.end_date);
+            const diffDays = calcDiffDays(leave.start_date, leave.end_date);
+            const attach   = leave.attachment
+                ? `<a href="${API_BASE}/uploads/${encodeURIComponent(leave.attachment)}" target="_blank" style="color:#007bff;text-decoration:none;">📄 ดูเอกสาร</a>`
                 : '-';
-
-            tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee; text-align: center;">
-                    <td style="padding: 12px; font-weight: bold;">${leave.emp_id}</td>
-                    <td>${leave.first_name} ${leave.last_name}</td>
-                    <td>
-                        <span style="background: #e9ecef; padding: 2px 8px; border-radius: 5px; font-size: 0.9em;">
-                            ${leave.leave_type}
-                        </span>
-                        <br><small style="color: #666;">(${diffDays} วัน)</small>
-                    </td>
-                    <td style="max-width: 150px; word-wrap: break-word; font-size: 0.9em;">${leave.reason || '-'}</td>
-                    <td>
-                        <div style="font-size: 0.85em;">
-                            ${start.toLocaleDateString('th-TH')} <br>ถึง<br> ${end.toLocaleDateString('th-TH')}
-                        </div>
-                    </td>
-                    <td>${attachment}</td>
-                    <td>
-                        <button onclick="handleLeaveAction(${leave.leave_id}, '${leave.emp_id}', '${leave.leave_type}', 'approved', ${diffDays})" 
-                                style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-bottom: 5px; width: 80px;">
-                            อนุมัติ
-                        </button>
-                        
-                        <button onclick="handleLeaveAction(${leave.leave_id}, '${leave.emp_id}', '${leave.leave_type}', 'rejected', ${diffDays})" 
-                                style="background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; width: 80px;">
-                            ปฏิเสธ
-                        </button>
-                    </td>
-                </tr>`;
-        });
-    } catch (err) {
-        console.error("Load Leaves Error:", err);
-    }
+            return `<tr>
+                <td style="text-align:center;font-weight:600;color:var(--text-mid);">${escapeHtml(leave.emp_id)}</td>
+                <td><div class="emp-name">${escapeHtml(leave.first_name)} ${escapeHtml(leave.last_name)}</div></td>
+                <td style="text-align:center;">
+                    <span class="badge badge-pending">${leaveLabel(leave.leave_type)}</span>
+                    <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">${diffDays} วัน</div>
+                </td>
+                <td style="font-size:0.82rem;color:var(--text-mid);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(leave.reason||'-')}</td>
+                <td style="text-align:center;font-size:0.82rem;color:#2176ae;line-height:1.6;">${start.toLocaleDateString('th-TH')}<br><span style="color:var(--text-light);font-size:0.72rem;">ถึง</span><br>${end.toLocaleDateString('th-TH')}</td>
+                <td style="text-align:center;">${attach}</td>
+                <td style="text-align:center;">
+                    <div class="actions-cell" style="flex-direction:column;gap:6px;">
+                        <button class="btn btn-primary" style="font-size:0.78rem;padding:6px 14px;justify-content:center;"
+                            onclick="handleLeaveAction(${leave.leave_id},'${escapeHtml(leave.emp_id)}','${leave.leave_type}','approved',${diffDays})">
+                            <i class="fas fa-check"></i> อนุมัติ</button>
+                        <button class="btn btn-danger" style="font-size:0.78rem;padding:6px 14px;justify-content:center;"
+                            onclick="handleLeaveAction(${leave.leave_id},'${escapeHtml(leave.emp_id)}','${leave.leave_type}','rejected',${diffDays})">
+                            <i class="fas fa-times"></i> ปฏิเสธ</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (err) { console.error('Load Leaves Error:', err); }
 }
 
-async function handleLeaveAction(leaveId, empId, leaveType, status, days) {
-    if (!confirm(`ยืนยันการทำรายการหรือไม่?`)) return;
-
+async function handleLeaveAction(leaveId, eid, leaveType, status, days) {
+    const label = status === 'approved' ? 'อนุมัติ' : 'ปฏิเสธ';
+    if (!await showConfirm(`ยืนยันการ <b>${label}</b> ใบลานี้?`, { title:`${label}ใบลางาน`, confirmText:label, danger:status==='rejected' })) return;
     try {
-        const payload = {
-            leave_id: leaveId,
-            status: status
-        };
-
-        const res = await axios.put(`${API_URL}/leaves/update-status`, payload);
-        alert(`✅ ${res.data.message}`);
-
-        loadPendingLeaves();
-        updateDashboardStats();
-        fetchAndRenderAllLeaveHistory();
-
-    } catch (err) {
-        console.error("Leave Action Error:", err);
-        alert('❌ ผิดพลาด: ' + (err.response?.data?.message || 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'));
-    }
+        const res = await axios.put(`${API_URL}/leaves/update-status`, { leave_id:leaveId, status }, getAuthHeaders());
+        showToast(res.data.message, 'success');
+        loadPendingLeaves(); updateDashboardStats(); fetchAndRenderAllLeaveHistory();
+    } catch (err) { showToast(err.response?.data?.message||'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error'); }
 }
 
-// ==========================================
-// 📊 3. โหลดตัวเลขสถิติ Dashboard 4 กล่อง
-// ==========================================
+// ============================================================
+// 📊 3. Dashboard Stats
+// ============================================================
 async function updateDashboardStats() {
     try {
-        const res = await axios.get(`${API_URL}/dashboard-stats`);
-        const stats = res.data;
-
-        document.getElementById('widget-total').innerText = stats.total || 0;
-        document.getElementById('widget-pending').innerText = stats.pending || 0;
-        document.getElementById('widget-approved').innerText = stats.approved || 0;
-        document.getElementById('widget-rejected').innerText = stats.rejected || 0;
-    } catch (err) {
-        console.error("Error updating stats:", err);
-    }
+        const { data: s } = await axios.get(`${API_URL}/dashboard-stats`, getAuthHeaders());
+        document.getElementById('widget-total').innerText    = s.total    || 0;
+        document.getElementById('widget-pending').innerText  = s.pending  || 0;
+        document.getElementById('widget-approved').innerText = s.approved || 0;
+        document.getElementById('widget-rejected').innerText = s.rejected || 0;
+    } catch (err) { console.error('Error updating stats:', err); }
 }
 
 function scrollToTable() {
-    const table = document.querySelector('.card');
-    if (table) {
-        table.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById('admin-leave-table-body')?.scrollIntoView({ behavior:'smooth' });
 }
 
-// ==========================================
-// 👥 4. ระบบจัดการพนักงาน
-// ==========================================
+// ============================================================
+// 👥 4. จัดการพนักงาน
+// ============================================================
 async function fetchAllEmployees() {
-    const empTbody = document.getElementById('employee-list-body');
-    const quotaTbody = document.getElementById('quota-list-body');
-    if (!empTbody || !quotaTbody) return;
-
+    const empTb  = document.getElementById('employee-list-body');
+    const quotTb = document.getElementById('quota-list-body');
+    if (!empTb || !quotTb) return;
     try {
-        const res = await axios.get(`${API_URL}/employees/all`);
-        empTbody.innerHTML = ''; quotaTbody.innerHTML = '';
-
-        res.data.forEach(emp => {
-            const roleBadge = emp.role === 'admin'
+        const { data } = await axios.get(`${API_URL}/employees/all`, getAuthHeaders());
+        empTb.innerHTML = quotTb.innerHTML = '';
+        data.forEach(emp => {
+            const badge = emp.role==='admin'
                 ? '<span class="badge badge-admin">🛡️ HR / Admin</span>'
                 : '<span class="badge badge-user">👤 พนักงานทั่วไป</span>';
-
-            empTbody.innerHTML += `
-                <tr>
-                    <td style="text-align:center; font-weight:600; color:var(--text-mid);">${emp.emp_id}</td>
-                    <td>
-                        <div class="emp-name">${emp.first_name} ${emp.last_name}</div>
-                        <div class="emp-sub">${emp.dept_name || 'ไม่ระบุแผนก'} | เรท: ฿${parseFloat(emp.hourly_rate||0).toFixed(2)}/ชม.</div>
-                    </td>
-                    <td style="text-align:center;">${roleBadge}</td>
-                    <td style="text-align:center;">
-                        <div class="actions-cell">
-                            <button class="btn-icon btn-icon-edit" onclick="openEditModal('${emp.emp_id}','${emp.first_name}','${emp.last_name}','${emp.role}','${emp.dept_id||''}','${emp.hourly_rate||0}')" title="แก้ไข"><i class="fas fa-edit"></i></button>
-                            <button class="btn-icon btn-icon-delete" onclick="deleteEmployee('${emp.emp_id}')" title="ลบ"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-
-            quotaTbody.innerHTML += `
-                <tr>
-                    <td style="text-align:center; font-weight:600; font-size:0.78rem; color:var(--text-mid);">${emp.emp_id}</td>
-                    <td><div style="font-weight:600; font-size:0.82rem;">${emp.first_name} ${emp.last_name}</div></td>
-                    <td style="text-align:center; font-weight:700; color:#e74c3c;">${emp.sick_leave_remaining ?? 0}</td>
-                    <td style="text-align:center; font-weight:700; color:#e67e22;">${emp.personal_leave_remaining ?? 0}</td>
-                    <td style="text-align:center; font-weight:700; color:var(--green);">${emp.annual_leave_remaining ?? 0}</td>
-                </tr>`;
+            empTb.innerHTML += `<tr>
+                <td style="text-align:center;font-weight:600;color:var(--text-mid);">${escapeHtml(emp.emp_id)}</td>
+                <td>
+                    <div class="emp-name">${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</div>
+                    <div class="emp-sub">${escapeHtml(emp.dept_name||'ไม่ระบุแผนก')} | เรท: ฿${parseFloat(emp.hourly_rate||0).toFixed(2)}/ชม.</div>
+                </td>
+                <td style="text-align:center;">${badge}</td>
+                <td style="text-align:center;">
+                    <div class="actions-cell">
+                        <button class="btn-icon btn-icon-edit" title="แก้ไข"
+                            data-id="${escapeHtml(emp.emp_id)}" data-fname="${escapeHtml(emp.first_name)}"
+                            data-lname="${escapeHtml(emp.last_name)}" data-role="${escapeHtml(emp.role)}"
+                            data-dept="${escapeHtml(emp.dept_id||'')}" data-rate="${emp.hourly_rate||0}"
+                            onclick="openEditModal(this.dataset)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon btn-icon-delete" title="ลบ"
+                            onclick="deleteEmployee('${escapeHtml(emp.emp_id)}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+            quotTb.innerHTML += `<tr>
+                <td style="text-align:center;font-weight:600;font-size:0.78rem;color:var(--text-mid);">${escapeHtml(emp.emp_id)}</td>
+                <td><div style="font-weight:600;font-size:0.82rem;">${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</div></td>
+                <td style="text-align:center;font-weight:700;color:#e74c3c;">${emp.sick_leave_remaining     ?? 0}</td>
+                <td style="text-align:center;font-weight:700;color:#e67e22;">${emp.personal_leave_remaining ?? 0}</td>
+                <td style="text-align:center;font-weight:700;color:var(--green);">${emp.annual_leave_remaining   ?? 0}</td>
+            </tr>`;
         });
     } catch (err) { console.error(err); }
 }
 
 document.getElementById('add-employee-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const emp_id = document.getElementById('add-emp-id').value;
-    const password = document.getElementById('add-password').value;
-    const first_name = document.getElementById('add-first-name').value;
-    const last_name = document.getElementById('add-last-name').value;
-    const role = document.getElementById('add-role').value;
-    const dept_id = document.getElementById('add-dept')?.value || null;
-    const hourly_rate = document.getElementById('add-hourly-rate').value || 0;
-
+    const body = {
+        emp_id:      document.getElementById('add-emp-id').value,
+        password:    document.getElementById('add-password').value,
+        first_name:  document.getElementById('add-first-name').value,
+        last_name:   document.getElementById('add-last-name').value,
+        role:        document.getElementById('add-role').value,
+        dept_id:     document.getElementById('add-dept')?.value || null,
+        hourly_rate: document.getElementById('add-hourly-rate').value || 0,
+    };
     try {
-        const res = await axios.post(`${API_URL}/employees/add`, {
-            emp_id, password, first_name, last_name, role, dept_id, hourly_rate
-        });
-        alert(`✅ ${res.data.message}`);
-        e.target.reset();
-        fetchAllEmployees();
-    } catch (err) {
-        alert(`❌ ผิดพลาด: ${err.response?.data?.message || 'ไม่สามารถเพิ่มพนักงานได้'}`);
-    }
+        const res = await axios.post(`${API_URL}/employees/add`, body, getAuthHeaders());
+        showToast(res.data.message, 'success'); e.target.reset(); fetchAllEmployees();
+    } catch (err) { showToast(err.response?.data?.message||'ไม่สามารถเพิ่มพนักงานได้', 'error'); }
 });
 
 async function deleteEmployee(id) {
-    if (!confirm('ยืนยันลบพนักงานคนนี้?')) return;
-    try { await axios.delete(`${API_URL}/employees/${id}`); fetchAllEmployees(); } catch (err) { alert('ลบไม่สำเร็จ'); }
+    if (!await showConfirm(`ลบพนักงาน <b>${id}</b> ออกจากระบบ?`, { title:'ลบพนักงาน', confirmText:'ลบ', danger:true })) return;
+    try {
+        await axios.delete(`${API_URL}/employees/${id}`, getAuthHeaders());
+        showToast('ลบพนักงานเรียบร้อยแล้ว', 'success'); fetchAllEmployees();
+    } catch { showToast('ลบข้อมูลไม่สำเร็จ', 'error'); }
 }
 
-function openEditModal(id, fname, lname, role, dept_id, hourly_rate) {
-    document.getElementById('edit-emp-id').value = id;
-    document.getElementById('edit-first-name').value = fname;
-    document.getElementById('edit-last-name').value = lname;
-    document.getElementById('edit-role').value = role;
-    document.getElementById('edit-dept').value = dept_id;
-    document.getElementById('edit-hourly-rate').value = hourly_rate;
+function openEditModal(ds) {
+    document.getElementById('edit-emp-id').value      = ds.id;
+    document.getElementById('edit-first-name').value  = ds.fname;
+    document.getElementById('edit-last-name').value   = ds.lname;
+    document.getElementById('edit-role').value        = ds.role;
+    document.getElementById('edit-dept').value        = ds.dept;
+    document.getElementById('edit-hourly-rate').value = ds.rate;
     document.getElementById('editEmployeeModal').style.display = 'flex';
 }
 
@@ -225,366 +184,230 @@ function closeEditModal() { document.getElementById('editEmployeeModal').style.d
 document.getElementById('edit-employee-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('edit-emp-id').value;
-    const data = {
-        first_name: document.getElementById('edit-first-name').value,
-        last_name: document.getElementById('edit-last-name').value,
-        role: document.getElementById('edit-role').value,
-        dept_id: document.getElementById('edit-dept').value,
-        hourly_rate: document.getElementById('edit-hourly-rate').value
+    const body = {
+        first_name:  document.getElementById('edit-first-name').value,
+        last_name:   document.getElementById('edit-last-name').value,
+        role:        document.getElementById('edit-role').value,
+        dept_id:     document.getElementById('edit-dept').value,
+        hourly_rate: document.getElementById('edit-hourly-rate').value,
     };
     try {
-        await axios.put(`${API_URL}/employees/${id}`, data);
-        alert('✅ แก้ไขสำเร็จ'); closeEditModal(); fetchAllEmployees();
-    } catch (err) { alert('❌ ล้มเหลว'); }
+        await axios.put(`${API_URL}/employees/${id}`, body, getAuthHeaders());
+        showToast('แก้ไขข้อมูลสำเร็จ', 'success'); closeEditModal(); fetchAllEmployees();
+    } catch { showToast('เกิดข้อผิดพลาดในการแก้ไข', 'error'); }
 });
 
-// ==========================================
-// 💰 5. ระบบรายงานเงินเดือน และวาดกราฟ (รวมกันแล้ว)
-// ==========================================
-let workHoursChartInstance = null; // ตัวแปรเก็บกราฟ
-
+// ============================================================
+// 💰 5. รายงานเงินเดือน
+// ============================================================
 async function loadSalaryReport() {
     try {
         const monthInput = document.getElementById('report-month')?.value;
         let url = `${API_URL}/salary-report`;
-        if (monthInput) {
-            const [y, m] = monthInput.split('-');
-            url += `?year=${y}&month=${m}`;
-        }
+        if (monthInput) { const [y,m] = monthInput.split('-'); url += `?year=${y}&month=${m}`; }
 
-        const res = await axios.get(url);
-        const data = res.data;
-        const tbody = document.getElementById('salary-report-body');
+        const { data }  = await axios.get(url, getAuthHeaders());
+        const tbody     = document.getElementById('salary-report-body');
+        const totalPay  = data.reduce((s,e) => s+(e.totalPay||0), 0);
+        const totalWork = data.reduce((s,e) => s+(parseFloat(e.total_work_hours)||0), 0);
+        const totalOT   = data.reduce((s,e) => s+(parseFloat(e.total_ot_hours)||0), 0);
+
+        const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+        set('rpt-emp-count',  data.length);
+        set('rpt-total-pay',  new Intl.NumberFormat('th-TH').format(Math.round(totalPay)));
+        set('rpt-total-work', totalWork.toFixed(1));
+        set('rpt-total-ot',   totalOT.toFixed(1));
 
         if (tbody) {
-            tbody.innerHTML = data.length ? '' : '<tr><td colspan="7" style="padding: 20px; color: #999;">ไม่พบข้อมูล</td></tr>';
+            tbody.innerHTML = data.length ? '' : '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-light);">ไม่พบข้อมูล</td></tr>';
             data.forEach(emp => {
-                const pay = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(emp.totalPay || 0);
-                tbody.innerHTML += `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding:15px 10px;">${emp.emp_id}</td>
-                        <td class="col-name">${emp.first_name} ${emp.last_name}</td>
-                        <td style="color: #3498db; font-weight: bold;">${emp.total_work_hours || 0}</td>
-                        <td style="color: #e67e22; font-weight: bold;">${emp.total_ot_hours || 0}</td>
-                        <td style="color: #dc3545; font-weight: bold;">${emp.sick_leaves || 0}</td>
-                        <td style="color: #f39c12; font-weight: bold;">${emp.personal_leaves || 0}</td>
-                        <td style="color: #28a745; font-weight: bold; font-size: 1.1em;">${pay}</td>
-                    </tr>`;
+                const pay = new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB'}).format(emp.totalPay||0);
+                tbody.innerHTML += `<tr>
+                    <td style="text-align:center;font-weight:600;color:var(--text-mid);">${escapeHtml(emp.emp_id)}</td>
+                    <td><div class="emp-name">${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</div><div class="emp-sub">฿${parseFloat(emp.hourly_rate||0).toFixed(0)}/ชม.</div></td>
+                    <td style="text-align:center;"><span style="background:#eaf4fb;color:#2176ae;padding:3px 10px;border-radius:20px;font-weight:700;font-size:0.82rem;">${parseFloat(emp.total_work_hours||0).toFixed(2)}</span></td>
+                    <td style="text-align:center;"><span style="background:#fef3e2;color:#a04000;padding:3px 10px;border-radius:20px;font-weight:700;font-size:0.82rem;">${parseFloat(emp.total_ot_hours||0).toFixed(2)}</span></td>
+                    <td style="text-align:center;font-weight:700;color:#e74c3c;">${emp.sick_leaves||0}</td>
+                    <td style="text-align:center;font-weight:700;color:#e67e22;">${emp.personal_leaves||0}</td>
+                    <td style="text-align:center;"><span style="font-size:0.95rem;font-weight:800;color:${(emp.totalPay||0)>0?'var(--green)':'var(--text-light)'};">${pay}</span></td>
+                </tr>`;
             });
         }
-
         drawWorkHoursChart(data);
-
-    } catch (err) { console.error("โหลดรายงานพลาด:", err); }
+    } catch (err) { console.error('โหลดรายงานพลาด:', err); }
 }
 
 function drawWorkHoursChart(data) {
     const ctx = document.getElementById('workHoursChart');
     if (!ctx) return;
-
-    const labels = data.map(emp => `${emp.first_name}`);
-    const workHoursData = data.map(emp => emp.total_work_hours || 0);
-    const otHoursData = data.map(emp => emp.total_ot_hours || 0);
-
-    if (workHoursChartInstance) {
-        workHoursChartInstance.destroy();
-    }
-
+    if (workHoursChartInstance) workHoursChartInstance.destroy();
     workHoursChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: data.map(e => e.first_name),
             datasets: [
-                {
-                    label: 'ชั่วโมงทำงานปกติ',
-                    data: workHoursData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4
-                },
-                {
-                    label: 'ชั่วโมง OT',
-                    data: otHoursData,
-                    backgroundColor: 'rgba(255, 159, 64, 0.7)',
-                    borderColor: 'rgba(255, 159, 64, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }
+                { label:'ชม. ทำงานปกติ', data:data.map(e=>parseFloat(e.total_work_hours)||0), backgroundColor:'rgba(0,184,148,0.75)', borderColor:'#00b894', borderWidth:0, borderRadius:6, borderSkipped:false },
+                { label:'ชม. OT',        data:data.map(e=>parseFloat(e.total_ot_hours)||0),   backgroundColor:'rgba(230,126,34,0.75)', borderColor:'#e67e22', borderWidth:0, borderRadius:6, borderSkipped:false }
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'จำนวนชั่วโมง' } }
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend: { position:'top', labels:{ font:{size:12,family:"'Segoe UI',sans-serif"}, usePointStyle:true, pointStyleWidth:10, padding:20 } },
+                tooltip: { backgroundColor:'#1e2d3d', titleFont:{size:12}, bodyFont:{size:12}, padding:10, cornerRadius:8, callbacks:{ label:c=>` ${c.dataset.label}: ${c.parsed.y.toFixed(2)} ชม.` } }
             },
-            plugins: { legend: { position: 'top' } }
+            scales: {
+                x: { grid:{display:false}, ticks:{font:{size:11},color:'#8e9eae'} },
+                y: { beginAtZero:true, grid:{color:'#f0f4f7',lineWidth:1}, border:{dash:[4,4]}, ticks:{font:{size:11},color:'#8e9eae'}, title:{display:true,text:'จำนวนชั่วโมง',color:'#8e9eae',font:{size:11}} }
+            }
         }
     });
 }
 
 function exportSalaryCSV() {
-    const table = document.getElementById("salary-table");
-    if (!table) return alert("ไม่พบข้อมูลสำหรับดาวน์โหลด");
-
-    const monthInput = document.getElementById('report-month').value || 'All';
-    const fileName = `Salary_Report_${monthInput}.csv`;
-
-    let rows = Array.from(table.rows).map(row => {
-        return Array.from(row.cells).map(c => {
-            let text = c.innerText.replace(/,/g, '').replace(/฿/g, '').trim();
-            return `"${text}"`;
-        }).join(",");
-    });
-
-    const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const table = document.getElementById('salary-table');
+    if (!table) { showToast('ไม่พบข้อมูลสำหรับดาวน์โหลด','warn'); return; }
+    const month = document.getElementById('report-month').value || 'All';
+    const rows  = Array.from(table.rows).map(r => Array.from(r.cells).map(c=>`"${c.innerText.replace(/,/g,'').replace(/฿/g,'').trim()}"`).join(','));
+    const link  = document.createElement('a');
+    link.href     = URL.createObjectURL(new Blob(['\uFEFF'+rows.join('\n')], {type:'text/csv;charset=utf-8;'}));
+    link.download = `Salary_Report_${month}.csv`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
-// ==========================================
-// 📢 6. ระบบประกาศข่าวสาร
-// ==========================================
+// ============================================================
+// 📢 6. ประกาศข่าวสาร
+// ============================================================
 async function loadAnnouncementsAdmin() {
-    const listDiv = document.getElementById('admin-announcement-list');
-    if (!listDiv) return;
-
+    const list = document.getElementById('admin-announcement-list');
+    if (!list) return;
     try {
-        const res = await axios.get(`${API_URL}/announcements`);
-
-        if (res.data.length === 0) {
-            listDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;"><i class="fas fa-inbox fa-3x" style="opacity: 0.2; display: block; margin-bottom: 10px;"></i>ยังไม่มีประกาศในระบบ</p>';
+        const { data } = await axios.get(`${API_URL}/announcements`, getAuthHeaders());
+        if (!data.length) {
+            list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-light);"><i class="fas fa-inbox" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:10px;"></i>ยังไม่มีประกาศในระบบ</div>`;
             return;
         }
-
-        listDiv.innerHTML = '';
-        res.data.forEach(item => {
-            const date = new Date(item.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-
-            listDiv.innerHTML += `
-                <div style="border: 1px solid #eaeaea; padding: 20px; border-radius: 8px; background: #fff; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 5px solid #e67e22; margin-bottom: 15px;">
-                    <h4 style="color: #2c3e50; font-size: 1.15em; margin: 0 0 8px 0; padding-right: 50px;">${item.title}</h4>
-                    <p style="margin: 0 0 12px 0; font-size: 0.85em; color: #7f8c8d;">
-                        <i class="far fa-clock"></i> เผยแพร่เมื่อ: ${date}
-                    </p>
-                    <p style="margin: 0; white-space: pre-line; color: #444; line-height: 1.6; font-size: 0.95em;">${item.content}</p>
-                    
-                    <button onclick="deleteAnnouncement(${item.id})" title="ลบประกาศ" 
-                        style="position: absolute; top: 20px; right: 20px; background: #ff4757; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(255,71,87,0.3);">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+        list.innerHTML = data.map(item => {
+            const date = new Date(item.created_at).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});
+            return `<div style="background:#f8fafc;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;border-left:4px solid #e67e22;margin-bottom:10px;position:relative;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;">
+                    <div style="font-weight:700;font-size:0.9rem;color:var(--text-dark);padding-right:36px;">${escapeHtml(item.title)}</div>
+                    <span style="background:#fff3cd;color:#9c6000;font-size:0.7rem;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;"><i class="far fa-clock"></i> ${date}</span>
                 </div>
-            `;
-        });
-    } catch (error) {
-        listDiv.innerHTML = '<p style="color: red; text-align: center;">โหลดข้อมูลผิดพลาด</p>';
-    }
+                <div style="font-size:0.82rem;color:var(--text-mid);line-height:1.6;white-space:pre-line;">${escapeHtml(item.content)}</div>
+                <button onclick="deleteAnnouncement(${item.id})" title="ลบประกาศ" class="btn-icon btn-icon-delete" style="position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:7px;"><i class="fas fa-trash-alt" style="font-size:0.72em;"></i></button>
+            </div>`;
+        }).join('');
+    } catch { list.innerHTML = '<p style="color:#e74c3c;text-align:center;padding:16px;">โหลดข้อมูลผิดพลาด</p>'; }
 }
 
 async function deleteAnnouncement(id) {
-    if (!confirm('ยืนยันที่จะลบประกาศนี้ใช่หรือไม่?')) return;
+    if (!await showConfirm('ลบประกาศนี้ออกจากระบบ?', {title:'ลบประกาศ', confirmText:'ลบ', danger:true})) return;
     try {
-        await axios.delete(`${API_URL}/announcements/${id}`);
-        loadAnnouncementsAdmin();
-    } catch (error) {
-        alert('❌ ลบไม่สำเร็จ');
-    }
+        await axios.delete(`${API_URL}/announcements/${id}`, getAuthHeaders());
+        showToast('ลบประกาศเรียบร้อยแล้ว','success'); loadAnnouncementsAdmin();
+    } catch { showToast('ลบไม่สำเร็จ','error'); }
 }
 
-// ==========================================
-// 🏖️ 7. ประวัติการลาทั้งหมด (มีระบบค้นหา)
-// ==========================================
-let allAdminLeaveRecords = [];
-let currentAdminPage = 1;
-
+// ============================================================
+// 🏖️ 7. ประวัติการลาทั้งหมด
+// ============================================================
 async function fetchAndRenderAllLeaveHistory() {
     try {
-        const res = await axios.get(`${API_URL}/leave-history`);
-        allAdminLeaveRecords = res.data;
-        currentAdminPage = 1;
-        renderAdminLeaveTable();
-    } catch (err) {
-        console.error("โหลดประวัติไม่สำเร็จ:", err);
-    }
+        const { data } = await axios.get(`${API_URL}/leave-history`, getAuthHeaders());
+        allAdminLeaveRecords = data; currentAdminPage = 1; renderAdminLeaveTable();
+    } catch (err) { console.error('โหลดประวัติไม่สำเร็จ:', err); }
 }
 
 function renderAdminLeaveTable() {
     const tbody = document.getElementById('all-leave-history-body');
-    const searchInput = document.getElementById('search-admin-leave');
-    const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
     if (!tbody) return;
-    tbody.innerHTML = '';
+    const term = (document.getElementById('search-admin-leave')?.value||'').trim().toLowerCase();
 
-    let filteredRecords = allAdminLeaveRecords;
+    let filtered = term
+        ? allAdminLeaveRecords.filter(item => item && (
+            String(item.emp_id||'').toLowerCase().includes(term) ||
+            `${item.first_name||''} ${item.last_name||''}`.toLowerCase().includes(term) ||
+            String(item.leave_type||'').toLowerCase().includes(term)
+          ))
+        : allAdminLeaveRecords;
 
-    if (searchTerm !== '') {
-        filteredRecords = allAdminLeaveRecords.filter(item => {
-            if (!item) return false;
-            const empId = String(item.emp_id || '').toLowerCase();
-            const fullName = String(`${item.first_name || ''} ${item.last_name || ''}`).toLowerCase();
-            const typeName = String(item.leave_type || '').toLowerCase();
-            return empId.includes(searchTerm) || fullName.includes(searchTerm) || typeName.includes(searchTerm);
-        });
-    }
-
-    if (filteredRecords.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: red;">ไม่พบข้อมูลที่ค้นหา</td></tr>';
-        renderAdminPagination(0);
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:red;">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+        renderPaginationButtons('admin-leave-pagination', 0, 1, ()=>{});
         return;
     }
 
     const itemsPerPage = 10;
-    const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+    const totalPages   = Math.ceil(filtered.length/itemsPerPage);
     if (currentAdminPage > totalPages || isNaN(currentAdminPage)) currentAdminPage = 1;
 
-    const startIndex = (currentAdminPage - 1) * itemsPerPage;
-    const recordsToShow = filteredRecords.slice(startIndex, startIndex + itemsPerPage);
-
-    const safeDate = (dateStr) => {
-        if (!dateStr) return '-';
-        const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('th-TH');
-    };
-
     try {
-        tbody.innerHTML = recordsToShow.map(item => {
-            let diffDays = '-';
-            if (item.start_date && item.end_date) {
-                const s = new Date(item.start_date);
-                const e = new Date(item.end_date);
-                diffDays = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
-            }
-
-            const statusMap = {
-                approved: { cls: 'badge-approved', label: 'อนุมัติแล้ว' },
-                rejected: { cls: 'badge-rejected', label: 'ไม่อนุมัติ' },
-                pending:  { cls: 'badge-pending',  label: 'รอพิจารณา' }
-            };
-            const st = statusMap[item.status] || statusMap.pending;
-
-            const leaveTypeLabel = {
-                sick: 'ป่วย', personal: 'ลากิจ', annual: 'พักร้อน',
-                'Sick Leave': 'ป่วย', 'Personal Leave': 'ลากิจ', 'Annual Leave': 'พักร้อน'
-            };
-            const typeLabel = leaveTypeLabel[item.leave_type] || item.leave_type || '-';
-
-            return `
-                <tr>
-                    <td style="text-align:center; color:var(--text-mid);">${safeDate(item.created_at)}</td>
-                    <td style="overflow:hidden;">
-                        <div class="emp-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.emp_id || '-'}</div>
-                        <div class="emp-sub" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.first_name || ''} ${item.last_name || ''}</div>
-                    </td>
-                    <td style="text-align:center;">
-                        <span style="background:#f0f4f7; color:var(--text-mid); padding:3px 9px; border-radius:6px; font-size:0.78rem; font-weight:600; white-space:nowrap;">${typeLabel}</span>
-                    </td>
-                    <td style="text-align:center; color:#2176ae; font-size:0.82rem; line-height:1.5;">
-                        ${safeDate(item.start_date)}<br><span style="color:var(--text-light);">ถึง</span> ${safeDate(item.end_date)}
-                    </td>
-                    <td style="text-align:center; font-weight:700; color:var(--text-dark);">${diffDays} <span style="font-weight:400; color:var(--text-light);">วัน</span></td>
-                    <td style="text-align:center;"><span class="badge ${st.cls}">${st.label}</span></td>
-                </tr>
-            `;
+        tbody.innerHTML = filtered.slice((currentAdminPage-1)*itemsPerPage, currentAdminPage*itemsPerPage).map(item => {
+            const diff = calcDiffDays(item.start_date, item.end_date);
+            const st   = STATUS_MAP[item.status] || STATUS_MAP.pending;
+            return `<tr>
+                <td style="text-align:center;color:var(--text-mid);">${safeDate(item.created_at)}</td>
+                <td style="overflow:hidden;">
+                    <div class="emp-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.emp_id||'-')}</div>
+                    <div class="emp-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.first_name||'')} ${escapeHtml(item.last_name||'')}</div>
+                </td>
+                <td style="text-align:center;"><span style="background:#f0f4f7;color:var(--text-mid);padding:3px 9px;border-radius:6px;font-size:0.78rem;font-weight:600;white-space:nowrap;">${leaveLabelShort(item.leave_type)}</span></td>
+                <td style="text-align:center;color:#2176ae;font-size:0.82rem;line-height:1.5;">${safeDate(item.start_date)}<br><span style="color:var(--text-light);">ถึง</span> ${safeDate(item.end_date)}</td>
+                <td style="text-align:center;font-weight:700;color:var(--text-dark);">${diff} <span style="font-weight:400;color:var(--text-light);">วัน</span></td>
+                <td style="text-align:center;"><span class="badge ${st.cls}">${st.label}</span></td>
+            </tr>`;
         }).join('');
-
-        renderAdminPagination(totalPages);
-    } catch (error) {
-        console.error("Render Table Error:", error);
-    }
+        renderPaginationButtons('admin-leave-pagination', totalPages, currentAdminPage, p => { currentAdminPage=p; renderAdminLeaveTable(); });
+    } catch (err) { console.error('Render Table Error:', err); }
 }
 
-function renderAdminPagination(totalPages) {
-    const paginationDiv = document.getElementById('admin-leave-pagination');
-    if (!paginationDiv) return;
-    paginationDiv.innerHTML = '';
-    if (totalPages <= 1) return;
+document.getElementById('search-admin-leave')?.addEventListener('input', () => {
+    currentAdminPage = 1; renderAdminLeaveTable();
+});
 
-    for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.innerText = i;
-        btn.style.margin = '0 3px';
-        btn.style.padding = '5px 10px';
-        btn.style.border = '1px solid #3498db';
-        btn.style.borderRadius = '3px';
-        btn.style.cursor = 'pointer';
-
-        if (i === currentAdminPage) {
-            btn.style.backgroundColor = '#3498db';
-            btn.style.color = 'white';
-        } else {
-            btn.style.backgroundColor = 'white';
-            btn.style.color = '#3498db';
-        }
-
-        btn.addEventListener('click', () => {
-            currentAdminPage = i;
-            renderAdminLeaveTable();
-        });
-        paginationDiv.appendChild(btn);
-    }
-}
-
-const adminSearchInput = document.getElementById('search-admin-leave');
-if (adminSearchInput) {
-    adminSearchInput.addEventListener('input', () => {
-        currentAdminPage = 1;
-        renderAdminLeaveTable();
-    });
-}
-
-// ==========================================
-// 🧭 8. ระบบสลับหน้าต่าง (Navigation)
-// ==========================================
+// ============================================================
+// 🧭 8. Navigation
+// ============================================================
 function switchPage(event, pageId, clickedLink) {
     if (event) event.preventDefault();
-    document.querySelectorAll('.page-section').forEach(p => p.style.display = 'none');
-    document.getElementById(pageId).style.display = 'block';
+    document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     if (clickedLink) clickedLink.classList.add('active');
-
-    if (pageId === 'page-manage-employees') fetchAllEmployees();
-    if (pageId === 'page-approve-leave') { loadPendingLeaves(); updateDashboardStats(); fetchAndRenderAllLeaveHistory(); }
-    if (pageId === 'page-report') loadSalaryReport();
-    if (pageId === 'page-announcements') loadAnnouncementsAdmin();
+    ({ 'page-manage-employees': fetchAllEmployees,
+       'page-report':           loadSalaryReport,
+       'page-announcements':    loadAnnouncementsAdmin,
+       'page-approve-leave':    () => { loadPendingLeaves(); updateDashboardStats(); fetchAndRenderAllLeaveHistory(); }
+    })[pageId]?.();
 }
 
-// ==========================================
-// 🚀 9. โหลดข้อมูลตอนเปิดเว็บไซต์ & ผูกปุ่มกด
-// ==========================================
+// ============================================================
+// 🚀 9. Init
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Admin Dashboard is Ready!");
-    updateDashboardStats();
-    loadDepartments();
-    loadPendingLeaves();
-    fetchAllEmployees();
-    loadSalaryReport();
-    loadAnnouncementsAdmin();
+    // แสดงชื่อ admin ใน sidebar
+    const adminNameVal = localStorage.getItem('employeeName');
+    if (adminNameVal) { const el = document.getElementById('admin-name'); if (el) el.textContent = adminNameVal; }
+
+    // ตั้งค่า default เดือนปัจจุบันใน report-month
+    const rmEl = document.getElementById('report-month');
+    if (rmEl && !rmEl.value) {
+        const now = new Date();
+        rmEl.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    }
+
+    updateDashboardStats(); loadDepartments(); loadPendingLeaves();
+    fetchAllEmployees(); loadSalaryReport(); loadAnnouncementsAdmin();
     fetchAndRenderAllLeaveHistory();
 
-    // 🌟 ย้ายการผูกปุ่มสร้างประกาศเข้ามาไว้ในนี้ เพื่อให้ชัวร์ 100% ว่ามันจะหาฟอร์มเจอ!
-    const announceForm = document.getElementById('announcement-form');
-    if (announceForm) {
-        announceForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // ป้องกันเว็บกระตุก/รีโหลด
-
-            const title = document.getElementById('announce-title').value;
-            const content = document.getElementById('announce-content').value;
-
-            try {
-                await axios.post(`${API_URL}/announcements`, { title, content });
-                alert('✅ เผยแพร่ประกาศสำเร็จ!');
-                e.target.reset(); // ล้างช่องกรอก
-                loadAnnouncementsAdmin(); // รีเฟรชตารางฝั่งขวา
-            } catch (error) {
-                console.error('Error adding announcement:', error);
-                alert('❌ ไม่สามารถเผยแพร่ประกาศได้ กรุณาตรวจสอบ Backend');
-            }
-        });
-    }
+    document.getElementById('announcement-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title   = document.getElementById('announce-title').value;
+        const content = document.getElementById('announce-content').value;
+        try {
+            await axios.post(`${API_URL}/announcements`, { title, content }, getAuthHeaders());
+            showToast('เผยแพร่ประกาศสำเร็จ','success'); e.target.reset(); loadAnnouncementsAdmin();
+        } catch { showToast('ไม่สามารถเผยแพร่ประกาศได้','error'); }
+    });
 });

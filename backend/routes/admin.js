@@ -1,6 +1,7 @@
 const express = require('express');
-const router = express.Router();
-const db = require('../config/db');
+const router  = express.Router();
+const db      = require('../config/db');
+const bcrypt  = require('bcrypt'); // ✅ เพิ่ม bcrypt
 
 // ==========================================
 // 📋 [READ] GET /api/admin/leaves/pending
@@ -42,7 +43,7 @@ router.get('/salary-report', async (req, res) => {
                     SELECT SUM(DATEDIFF(end_date, start_date) + 1) 
                     FROM leave_requests 
                     WHERE emp_id = e.emp_id 
-                      AND leave_type = 'Sick Leave' 
+                      AND leave_type = 'sick' 
                       AND status = 'approved' 
                       AND MONTH(start_date) = ? AND YEAR(start_date) = ?
                 ), 0) AS sick_leaves,
@@ -50,7 +51,7 @@ router.get('/salary-report', async (req, res) => {
                     SELECT SUM(DATEDIFF(end_date, start_date) + 1) 
                     FROM leave_requests 
                     WHERE emp_id = e.emp_id 
-                      AND leave_type = 'Personal Leave' 
+                      AND leave_type = 'personal' 
                       AND status = 'approved' 
                       AND MONTH(start_date) = ? AND YEAR(start_date) = ?
                 ), 0) AS personal_leaves
@@ -94,7 +95,6 @@ router.get('/departments', async (req, res) => {
 
 // ==========================================
 // 📊 [READ] สถิติ Dashboard (เดือนปัจจุบัน)
-// ✅ แก้: ลบ route ซ้ำออก เหลือแค่ตัวที่ filter เดือนปัจจุบัน
 // ==========================================
 router.get('/dashboard-stats', async (req, res) => {
     try {
@@ -147,8 +147,6 @@ router.put('/employees/:id', async (req, res) => {
 
 // ==========================================
 // ✅❌ [UPDATE] อนุมัติ/ปฏิเสธ ใบลา
-// ✅ แก้ 1: คำนวณ days_requested ใน server แทนรับจาก client
-// ✅ แก้ 2: เปรียบเทียบ leave_type ให้ตรงกับค่าใน DB ('Sick Leave' ฯลฯ)
 // ==========================================
 router.put('/leaves/update-status', async (req, res) => {
     try {
@@ -158,7 +156,6 @@ router.put('/leaves/update-status', async (req, res) => {
             return res.status(400).json({ message: 'ข้อมูลไม่ครบถ้วน' });
         }
 
-        // 1. ดึงข้อมูลใบลาจาก DB เพื่อคำนวณ days และ leave_type ฝั่ง server
         const [leaveRows] = await db.query(
             'SELECT emp_id, leave_type, start_date, end_date FROM leave_requests WHERE leave_id = ?',
             [leave_id]
@@ -170,25 +167,20 @@ router.put('/leaves/update-status', async (req, res) => {
 
         const { emp_id, leave_type, start_date, end_date } = leaveRows[0];
 
-        // ✅ คำนวณ days_requested ใน server ไม่รับจาก client
         const days_requested = Math.ceil(
             (new Date(end_date) - new Date(start_date)) / (1000 * 60 * 60 * 24)
         ) + 1;
 
-        // 2. อัปเดตสถานะ
         await db.query(
             'UPDATE leave_requests SET status = ? WHERE leave_id = ?',
             [status, leave_id]
         );
 
-        // 3. ตัดโควตาถ้า approve (เทียบ leave_type ตรงกับค่าใน DB)
         if (status === 'approved' && days_requested > 0) {
             let columnToDeduct = '';
-
-            // ✅ แก้: ใช้ค่าที่ตรงกับที่บันทึกใน leave_requests จริงๆ
-            if (leave_type === 'Sick Leave')     columnToDeduct = 'sick_leave_remaining';
-            else if (leave_type === 'Personal Leave') columnToDeduct = 'personal_leave_remaining';
-            else if (leave_type === 'Annual Leave')   columnToDeduct = 'annual_leave_remaining';
+            if (leave_type === 'sick')          columnToDeduct = 'sick_leave_remaining';
+            else if (leave_type === 'personal') columnToDeduct = 'personal_leave_remaining';
+            else if (leave_type === 'annual')   columnToDeduct = 'annual_leave_remaining';
 
             if (columnToDeduct) {
                 const deductSql = `
@@ -197,7 +189,6 @@ router.put('/leaves/update-status', async (req, res) => {
                     WHERE emp_id = ? AND year = YEAR(CURDATE()) AND ${columnToDeduct} >= ?
                 `;
                 const [result] = await db.query(deductSql, [days_requested, emp_id, days_requested]);
-
                 if (result.affectedRows === 0) {
                     console.log(`⚠️ พนักงาน ${emp_id} วันลา ${leave_type} ไม่พอให้ตัดโควตา`);
                 }
@@ -239,7 +230,7 @@ router.get('/employees/all', async (req, res) => {
 
 // ==========================================
 // ➕ [CREATE] เพิ่มพนักงานใหม่
-// ✅ แก้: ใช้ dept_id จาก req.body แทน hardcode เป็น 1
+// ✅ Hash password ด้วย bcrypt ก่อน save
 // ==========================================
 router.post('/employees/add', async (req, res) => {
     const { emp_id, first_name, last_name, password, role, dept_id, hourly_rate } = req.body;
@@ -251,14 +242,16 @@ router.post('/employees/add', async (req, res) => {
         }
 
         const final_hourly_rate = hourly_rate ? parseFloat(hourly_rate) : 0.00;
-        // ✅ แก้: ใช้ dept_id จาก request body (ถ้าไม่ส่งมาให้เป็น null)
-        const final_dept_id = dept_id ? dept_id : null;
+        const final_dept_id     = dept_id     ? dept_id                 : null;
+
+        // ✅ Hash password ก่อน save ทุกครั้ง
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const sql = `
             INSERT INTO employees (emp_id, first_name, last_name, password, role, dept_id, hourly_rate) 
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-        await db.query(sql, [emp_id, first_name, last_name, password, role, final_dept_id, final_hourly_rate]);
+        await db.query(sql, [emp_id, first_name, last_name, hashedPassword, role, final_dept_id, final_hourly_rate]);
 
         const currentYear = new Date().getFullYear();
         await db.query(
