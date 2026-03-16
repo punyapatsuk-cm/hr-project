@@ -8,7 +8,9 @@ const db = require('../config/db');
 // กำหนดเวลามาตรฐาน (ปรับได้ตามบริษัท)
 const WORK_START_HOUR = 8;   // เริ่มงาน 08:00
 const WORK_END_HOUR   = 17;  // เลิกงานปกติ 17:00
-
+const OT_END_HOUR     = 21;  // OT ได้ถึงแค่ 21:00 (5 ทุ่ม)
+const BREAK_HOURS     = 1;   // พักเที่ยง 1 ชม.
+const BREAK_THRESHOLD = 6;   // หักพักเมื่อทำงานเกิน 6 ชม.
 // ── Helper: คำนวณชั่วโมงจาก milliseconds ──
 const msToHours = (ms) => parseFloat((ms / (1000 * 60 * 60)).toFixed(2));
 
@@ -19,6 +21,14 @@ exports.clockIn = async (req, res) => {
     try {
         const { emp_id } = req.body;
         if (!emp_id) return res.status(400).json({ message: 'ไม่พบรหัสพนักงาน' });
+
+        // ตรวจสอบว่าอยู่ในช่วงเวลาที่ลงงานได้ (08:00 - 21:00)
+        const nowHour = new Date().getHours();
+        if (nowHour >= OT_END_HOUR || nowHour < WORK_START_HOUR) {
+            return res.status(400).json({
+                message: `ไม่สามารถลงเวลาได้ในช่วงนี้ (${OT_END_HOUR}:00 – ${WORK_START_HOUR}:00) กรุณาลงเวลาระหว่าง ${WORK_START_HOUR}:00 – ${OT_END_HOUR}:00`
+            });
+        }
 
         // ตรวจสอบว่ายังมีรอบที่ยังไม่ clock-out อยู่ไหม
         const [existing] = await db.query(
@@ -71,22 +81,41 @@ exports.clockOut = async (req, res) => {
         const checkInTime  = new Date(existing[0].check_in_time);
         const checkOutTime = new Date();
 
-        // เวลาเลิกงานปกติ 17:00 ของวันเดียวกับที่ check-in
         const normalEnd = new Date(checkInTime);
-        normalEnd.setHours(WORK_END_HOUR, 0, 0, 0);
+        normalEnd.setHours(WORK_END_HOUR, 0, 0, 0); // 17:00
 
-        let work_hours, ot_hours;
+        const otEnd = new Date(checkInTime);
+        otEnd.setHours(OT_END_HOUR, 0, 0, 0);       // 21:00
 
-        if (checkOutTime <= normalEnd) {
+        // Cap checkout ที่ 21:00 — ถ้าออกหลัง 21:00 นับแค่ถึง 21:00
+        const effectiveOut = checkOutTime > otEnd ? otEnd : checkOutTime;
+
+        let rawWork = 0, rawOt = 0;
+
+        if (checkInTime >= normalEnd) {
+            // เข้า 17:00-21:00 → นับเป็น OT ทั้งหมด
+            rawOt = Math.max(0, msToHours(effectiveOut - checkInTime));
+        } else if (effectiveOut <= normalEnd) {
             // ออกก่อนหรือตรง 17:00 → ไม่มี OT
-            work_hours = msToHours(checkOutTime - checkInTime);
-            ot_hours   = 0;
+            rawWork = Math.max(0, msToHours(effectiveOut - checkInTime));
         } else {
-            // ออกหลัง 17:00 → คำนวณ OT
-            // BUG FIX: ใช้ Math.max(0, ...) ป้องกัน work_hours / ot_hours ติดลบ
-            // กรณี check-in ใกล้เที่ยงคืนและ check-out ข้ามวัน
-            work_hours = Math.max(0, msToHours(normalEnd - checkInTime));
-            ot_hours   = Math.max(0, msToHours(checkOutTime - normalEnd));
+            // เข้าก่อน 17:00 ออกหลัง 17:00 → แบ่ง work/OT ที่ 17:00
+            rawWork = Math.max(0, msToHours(normalEnd - checkInTime));
+            rawOt   = Math.max(0, msToHours(effectiveOut - normalEnd));
+        }
+
+        // หักพักเที่ยง 1 ชม. อัตโนมัติถ้าทำงานรวมเกิน 6 ชม.
+        const totalRaw    = rawWork + rawOt;
+        const breakDeduct = totalRaw > BREAK_THRESHOLD ? BREAK_HOURS : 0;
+
+        // หักพักจาก work_hours ก่อน ถ้าไม่พอค่อยหักจาก ot_hours
+        let work_hours, ot_hours;
+        if (breakDeduct <= rawWork) {
+            work_hours = rawWork - breakDeduct;
+            ot_hours   = rawOt;
+        } else {
+            work_hours = 0;
+            ot_hours   = Math.max(0, rawOt - (breakDeduct - rawWork));
         }
 
         await db.query(
