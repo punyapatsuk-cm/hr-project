@@ -1,36 +1,36 @@
 // ============================================================
-// controllers/attendanceController.js
-// จัดการ Clock-in / Clock-out และดึงประวัติการลงเวลา
+// attendanceController.js — จัดการบันทึกเวลาเข้า/ออกงาน
 // ============================================================
 
 const db = require('../config/db');
 
-// กำหนดเวลามาตรฐาน (ปรับได้ตามบริษัท)
+// ── ค่าคงที่เวลาทำงาน (แก้ได้ตามนโยบายบริษัท) ──────────────
 const WORK_START_HOUR = 8;   // เริ่มงาน 08:00
 const WORK_END_HOUR   = 17;  // เลิกงานปกติ 17:00
-const OT_END_HOUR     = 21;  // OT ได้ถึงแค่ 21:00 (5 ทุ่ม)
+const OT_END_HOUR     = 21;  // OT ได้สูงสุดถึง 21:00
 const BREAK_HOURS     = 1;   // พักเที่ยง 1 ชม.
-const BREAK_THRESHOLD = 6;   // หักพักเมื่อทำงานเกิน 6 ชม.
-// ── Helper: คำนวณชั่วโมงจาก milliseconds ──
+const BREAK_THRESHOLD = 6;   // หักพักอัตโนมัติเมื่อทำงานรวมเกิน 6 ชม.
+
+// แปลง milliseconds เป็นชั่วโมง ทศนิยม 2 ตำแหน่ง
 const msToHours = (ms) => parseFloat((ms / (1000 * 60 * 60)).toFixed(2));
 
-// ==========================================
-// บันทึกเข้างาน (Clock-In)
-// ==========================================
+// ============================================================
+// clockIn — บันทึกเวลาเข้างาน
+// ============================================================
 exports.clockIn = async (req, res) => {
     try {
         const { emp_id } = req.body;
         if (!emp_id) return res.status(400).json({ message: 'ไม่พบรหัสพนักงาน' });
 
-        // ตรวจสอบว่าอยู่ในช่วงเวลาที่ลงงานได้ (08:00 - 21:00)
+        // ตรวจสอบช่วงเวลาที่อนุญาต (08:00 - 21:00 เท่านั้น)
         const nowHour = new Date().getHours();
         if (nowHour >= OT_END_HOUR || nowHour < WORK_START_HOUR) {
             return res.status(400).json({
-                message: `ไม่สามารถลงเวลาได้ในช่วงนี้ (${OT_END_HOUR}:00 – ${WORK_START_HOUR}:00) กรุณาลงเวลาระหว่าง ${WORK_START_HOUR}:00 – ${OT_END_HOUR}:00`
+                message: `ไม่สามารถลงเวลาได้ในช่วงนี้ กรุณาลงเวลาระหว่าง ${WORK_START_HOUR}:00 – ${OT_END_HOUR}:00`
             });
         }
 
-        // ตรวจสอบว่ายังมีรอบที่ยังไม่ clock-out อยู่ไหม
+        // ตรวจสอบว่ายังค้างรอบที่ยังไม่ได้ clock-out อยู่ไหม
         const [existing] = await db.query(
             `SELECT * FROM attendance_logs
              WHERE emp_id = ? AND work_date = CURDATE()
@@ -55,14 +55,22 @@ exports.clockIn = async (req, res) => {
     }
 };
 
-// ==========================================
-// บันทึกเลิกงาน (Clock-Out)
-// ==========================================
+// ============================================================
+// clockOut — บันทึกเวลาเลิกงาน พร้อมคำนวณ work_hours และ ot_hours
+//
+// Logic การคำนวณ:
+//   - เข้าก่อน 17:00 ออกก่อน 17:00  → นับ work เท่านั้น
+//   - เข้าก่อน 17:00 ออกหลัง 17:00  → work ถึง 17:00 + OT หลัง 17:00
+//   - เข้าหลัง 17:00 (ช่วง OT)       → นับเป็น OT ทั้งหมด
+//   - ออกหลัง 21:00                   → cap ที่ 21:00 อัตโนมัติ
+//   - ทำงานรวมเกิน 6 ชม.             → หักพักเที่ยง 1 ชม. อัตโนมัติ
+// ============================================================
 exports.clockOut = async (req, res) => {
     try {
         const { emp_id } = req.body;
         if (!emp_id) return res.status(400).json({ message: 'ไม่พบรหัสพนักงาน' });
 
+        // ดึง record ล่าสุดของวันนี้
         const [existing] = await db.query(
             `SELECT * FROM attendance_logs
              WHERE emp_id = ? AND work_date = CURDATE()
@@ -73,7 +81,6 @@ exports.clockOut = async (req, res) => {
         if (existing.length === 0) {
             return res.status(400).json({ message: 'ไม่พบข้อมูลการเข้างานของวันนี้ กรุณากดเข้างานก่อน' });
         }
-
         if (existing[0].check_out_time !== null) {
             return res.status(400).json({ message: 'คุณได้บันทึกเวลาเลิกงานของรอบล่าสุดไปแล้ว' });
         }
@@ -81,34 +88,36 @@ exports.clockOut = async (req, res) => {
         const checkInTime  = new Date(existing[0].check_in_time);
         const checkOutTime = new Date();
 
+        // กำหนด boundary เวลา
         const normalEnd = new Date(checkInTime);
         normalEnd.setHours(WORK_END_HOUR, 0, 0, 0); // 17:00
 
         const otEnd = new Date(checkInTime);
         otEnd.setHours(OT_END_HOUR, 0, 0, 0);       // 21:00
 
-        // Cap checkout ที่ 21:00 — ถ้าออกหลัง 21:00 นับแค่ถึง 21:00
+        // cap เวลาออกไม่เกิน 21:00
         const effectiveOut = checkOutTime > otEnd ? otEnd : checkOutTime;
 
+        // คำนวณ work และ OT แบบ raw (ก่อนหักพัก)
         let rawWork = 0, rawOt = 0;
 
         if (checkInTime >= normalEnd) {
-            // เข้า 17:00-21:00 → นับเป็น OT ทั้งหมด
+            // เข้าช่วง 17:00-21:00 → OT ทั้งหมด
             rawOt = Math.max(0, msToHours(effectiveOut - checkInTime));
         } else if (effectiveOut <= normalEnd) {
-            // ออกก่อนหรือตรง 17:00 → ไม่มี OT
+            // ออกก่อน/ตรง 17:00 → work เท่านั้น
             rawWork = Math.max(0, msToHours(effectiveOut - checkInTime));
         } else {
-            // เข้าก่อน 17:00 ออกหลัง 17:00 → แบ่ง work/OT ที่ 17:00
-            rawWork = Math.max(0, msToHours(normalEnd - checkInTime));
+            // เข้าก่อน 17:00 ออกหลัง 17:00 → แบ่งที่ 17:00
+            rawWork = Math.max(0, msToHours(normalEnd   - checkInTime));
             rawOt   = Math.max(0, msToHours(effectiveOut - normalEnd));
         }
 
-        // หักพักเที่ยง 1 ชม. อัตโนมัติถ้าทำงานรวมเกิน 6 ชม.
+        // หักพักเที่ยงอัตโนมัติถ้าทำงานรวมเกิน 6 ชม.
         const totalRaw    = rawWork + rawOt;
         const breakDeduct = totalRaw > BREAK_THRESHOLD ? BREAK_HOURS : 0;
 
-        // หักพักจาก work_hours ก่อน ถ้าไม่พอค่อยหักจาก ot_hours
+        // หักพักจาก work ก่อน ถ้าไม่พอค่อยหักจาก OT
         let work_hours, ot_hours;
         if (breakDeduct <= rawWork) {
             work_hours = rawWork - breakDeduct;
@@ -137,22 +146,22 @@ exports.clockOut = async (req, res) => {
     }
 };
 
-// ==========================================
-// ดึงประวัติการลงเวลา (30 วันล่าสุด)
-// ==========================================
+// ============================================================
+// getHistory — ดึงประวัติการลงเวลา 30 วันล่าสุดของพนักงาน
+// ============================================================
 exports.getHistory = async (req, res) => {
     try {
-        const emp_id = req.params.emp_id;
+        const { emp_id } = req.params;
 
-        const sql = `
-            SELECT work_date, check_in_time, check_out_time, work_hours, ot_hours
-            FROM attendance_logs
-            WHERE emp_id = ?
-            ORDER BY work_date DESC, check_in_time DESC
-            LIMIT 30
-        `;
+        const [results] = await db.query(
+            `SELECT work_date, check_in_time, check_out_time, work_hours, ot_hours
+             FROM attendance_logs
+             WHERE emp_id = ?
+             ORDER BY work_date DESC, check_in_time DESC
+             LIMIT 30`,
+            [emp_id]
+        );
 
-        const [results] = await db.query(sql, [emp_id]);
         res.status(200).json(results);
     } catch (error) {
         console.error('Fetch Attendance History Error:', error);

@@ -1,9 +1,13 @@
+// ============================================================
+// server.js — Entry Point ของ Backend
+// ============================================================
+
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
+const cors    = require('cors');
+const path    = require('path');
 require('dotenv').config();
 
-// ดึงไฟล์ Routes เข้ามาทั้งหมด
+// ── Routes ──────────────────────────────────────────────────
 const authRoutes       = require('./routes/authRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const leaveRoutes      = require('./routes/leaveRoutes');
@@ -11,27 +15,31 @@ const adminRoutes      = require('./routes/admin');
 const userRoutes       = require('./routes/userRoutes');
 
 const app  = express();
-const port = process.env.PORT || 1304;
+const PORT = process.env.PORT || 1304;
 
+// ── Middleware ───────────────────────────────────────────────
 app.use(express.json());
 app.use(cors());
 
+// เปิดให้เข้าถึงไฟล์ที่อัปโหลด (เอกสารแนบใบลา)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Logger — แสดง method และ path ของทุก request
 app.use((req, res, next) => {
-    console.log(`[${new Date().toLocaleString('th-TH')}] 🚀 ${req.method} API: ${req.originalUrl}`);
+    console.log(`[${new Date().toLocaleString('th-TH')}] ${req.method} ${req.originalUrl}`);
     next();
 });
 
-// ✅ แก้: ลบ route ซ้ำออก เหลือแต่ละตัวครั้งเดียว
+// ── API Routes ───────────────────────────────────────────────
 app.use('/api/auth',       authRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leave',      leaveRoutes);
 app.use('/api/admin',      adminRoutes);
 app.use('/api/employee',   userRoutes);
 
-app.listen(port, () => {
-    console.log(`=========================================`);
-    console.log(`🌟 Backend Server is running on port ${port}`);
-    console.log(`=========================================`);
+// ── Start Server ─────────────────────────────────────────────
+app.listen(PORT, () => {
+    console.log('=========================================');
+    console.log(`🌟 Backend Server is running on port ${PORT}`);
+    console.log('=========================================');
 });

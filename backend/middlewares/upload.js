@@ -1,22 +1,30 @@
-const multer = require('multer');
-const path = require('path');
+// ============================================================
+// upload.js — Multer config สำหรับอัปโหลดไฟล์แนบใบลา
+// ============================================================
 
+const multer = require('multer');
+const path   = require('path');
+
+// ประเภทไฟล์ที่อนุญาต
+const ALLOWED_TYPES = /jpeg|jpg|png|pdf/;
+
+// กำหนดที่เก็บและชื่อไฟล์
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/'); // ต้องสร้างโฟลเดอร์ uploads/ ไว้ในโปรเจกต์ด้วยนะครับ
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // ต้องมีโฟลเดอร์ uploads/ ในโปรเจกต์
     },
-    filename: function (req, file, cb) {
-        // ตั้งชื่อไฟล์: leave_เวลาปัจจุบัน.นามสกุลไฟล์
-        cb(null, 'leave_' + Date.now() + path.extname(file.originalname));
+    filename: (req, file, cb) => {
+        // รูปแบบชื่อ: leave_<timestamp>.<นามสกุล>
+        cb(null, `leave_${Date.now()}${path.extname(file.originalname)}`);
     }
 });
 
 const upload = multer({
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    storage,
+    limits:     { fileSize: 5 * 1024 * 1024 }, // จำกัด 5MB
     fileFilter: (req, file, cb) => {
-        const allowed = /jpeg|jpg|png|pdf/;
-        cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
+        const isAllowed = ALLOWED_TYPES.test(path.extname(file.originalname).toLowerCase());
+        cb(null, isAllowed);
     }
 });
 

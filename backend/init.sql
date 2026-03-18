@@ -88,7 +88,7 @@ INSERT INTO departments (dept_id, dept_name) VALUES
 
 -- รหัสผ่านเป็น plain text — จะถูก auto-upgrade เป็น bcrypt ตอน login ครั้งแรก
 INSERT INTO employees (emp_id, dept_id, first_name, last_name, password, role, hourly_rate) VALUES
-('ADMIN00', 1, 'Punyapat', 'Sukcharoen', '12345',  'admin', 200.00),
+('ADMIN', 1, 'ADMIN', 'admin', '12345',  'admin', 200.00),
 
 INSERT INTO leave_balances (emp_id, year, sick_leave_remaining, personal_leave_remaining, annual_leave_remaining) VALUES
 ('ADMIN00', 2026, 30, 6, 6),
