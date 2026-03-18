@@ -1,7 +1,3 @@
-// ============================================================
-// admin.js — Routes สำหรับ Admin Dashboard
-// ============================================================
-
 const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
