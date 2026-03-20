@@ -1,10 +1,3 @@
--- ============================================================
--- hr_attendance_db — Complete Setup SQL
--- import ได้เลยทันที ไม่ต้องรัน script อื่นก่อน
--- authController.js จะ auto-upgrade password เป็น bcrypt
--- อัตโนมัติตอน login ครั้งแรก
--- ============================================================
-
 DROP TABLE IF EXISTS attendance_logs;
 DROP TABLE IF EXISTS leave_balances;
 DROP TABLE IF EXISTS leave_requests;

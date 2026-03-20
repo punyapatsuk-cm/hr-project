@@ -1,24 +1,11 @@
-// ============================================================
-// authController.js — จัดการ Login และออก JWT Token
-// ============================================================
-
 const bcrypt = require('bcrypt');
 const jwt    = require('jsonwebtoken');
 const db     = require('../config/db');
 
 const SALT_ROUNDS = 10;
 
-// ข้อความ error เดียวกันทั้ง "ไม่พบ ID" และ "รหัสผ่านผิด"
-// เพื่อป้องกัน Username Enumeration Attack
 const INVALID_MSG = 'รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง';
 
-// ============================================================
-// login — ตรวจสอบ credentials และออก JWT Token
-//
-// รองรับ password 2 รูปแบบ:
-//   1. bcrypt hash ($2b$...) → เปรียบเทียบด้วย bcrypt.compare()
-//   2. plain text (account เก่า) → เปรียบตรงๆ แล้ว auto-upgrade เป็น bcrypt
-// ============================================================
 exports.login = async (req, res) => {
     try {
         const { emp_id, password } = req.body;
@@ -27,7 +14,7 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'กรุณากรอกรหัสพนักงานและรหัสผ่านให้ครบถ้วน' });
         }
 
-        // ดึงข้อมูล user จาก DB
+        // ดึงข้อมูลจาก DB
         const [users] = await db.query(
             'SELECT emp_id, first_name, last_name, role, dept_id, password FROM employees WHERE emp_id = ?',
             [emp_id]
@@ -42,10 +29,8 @@ exports.login = async (req, res) => {
         let   isMatch  = false;
 
         if (isBcrypt) {
-            // password เป็น bcrypt hash แล้ว
             isMatch = await bcrypt.compare(password, user.password);
         } else {
-            // password เป็น plain text → ตรวจตรงๆ แล้ว upgrade
             isMatch = (password === user.password);
 
             if (isMatch) {
@@ -56,10 +41,9 @@ exports.login = async (req, res) => {
                         'UPDATE employees SET password = ? WHERE emp_id = ?',
                         [hashed, emp_id]
                     );
-                    console.log(`🔒 Auto-upgraded password for ${emp_id} to bcrypt`);
+                    console.log(`Auto-upgraded password for ${emp_id} to bcrypt`);
                 } catch (upgradeErr) {
-                    // ไม่ block login ถ้า upgrade ล้มเหลว
-                    console.error(`⚠️ Failed to upgrade password for ${emp_id}:`, upgradeErr.message);
+                    console.error(`Failed to upgrade password for ${emp_id}:`, upgradeErr.message);
                 }
             }
         }
@@ -70,11 +54,10 @@ exports.login = async (req, res) => {
 
         // ตรวจสอบ JWT_SECRET ก่อนออก token
         if (!process.env.JWT_SECRET) {
-            console.error('❌ JWT_SECRET is not set in .env file!');
+            console.error('JWT_SECRET is not set in .env file!');
             return res.status(500).json({ message: 'การตั้งค่าเซิร์ฟเวอร์ไม่สมบูรณ์ กรุณาติดต่อผู้ดูแลระบบ' });
         }
 
-        // ออก JWT Token อายุ 1 วัน
         const token = jwt.sign(
             { emp_id: user.emp_id, role: user.role, dept_id: user.dept_id },
             process.env.JWT_SECRET,

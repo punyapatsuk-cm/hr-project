@@ -1,7 +1,3 @@
-// ============================================================
-// attendanceRoutes.js — Routes สำหรับระบบลงเวลา
-// ============================================================
-
 const express               = require('express');
 const router                = express.Router();
 const attendanceController  = require('../controllers/attendanceController');

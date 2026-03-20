@@ -1,21 +1,12 @@
-// ============================================================
-// home.js — Frontend สำหรับหน้าพนักงาน
-// ต้องโหลด utils.js ก่อนไฟล์นี้เสมอ (API_BASE, helpers อยู่ใน utils.js)
-// ============================================================
-
-// ── State ───────────────────────────────────────────────────
 let allLeaveRecords  = [];
 let currentLeavePage = 1;
 const LEAVE_ITEMS_PER_PAGE = 10;
 
-// ── ตรวจสอบ login ─────────────────────────────────────────
+// ── ตรวจสอบ login ──
 const employeeName = localStorage.getItem('employeeName');
 const empId        = localStorage.getItem('employeeId');
 if (!employeeName || !empId) window.location.replace('login.html');
 
-// ============================================================
-// DOMContentLoaded — ผูก event ทั้งหมดที่นี่ที่เดียว
-// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
 
     // ตั้งค่า UI แสดงชื่อพนักงาน
@@ -26,14 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatar = document.getElementById('sidebar-avatar');
     if (avatar) avatar.textContent = employeeName.charAt(0).toUpperCase();
 
-    // เริ่มนาฬิกา
     updateClock();
     setInterval(updateClock, 1000);
 
-    // โหลด Dashboard เริ่มต้น
     loadEmployeeDashboard();
 
-    // ── ปุ่มเข้างาน ──────────────────────────────────────────
+    // ── ปุ่มเข้างาน ──
     document.getElementById('btn-clock-in')?.addEventListener('click', async (e) => {
         e.preventDefault(); e.stopPropagation();
         const statusEl = document.getElementById('attendance-status');
@@ -50,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── ปุ่มเลิกงาน ──────────────────────────────────────────
+    // ── ปุ่มเลิกงาน ──
     document.getElementById('btn-clock-out')?.addEventListener('click', async (e) => {
         e.preventDefault(); e.stopPropagation();
         if (!await showConfirm('บันทึกเวลาเลิกงาน?', { title: 'ยืนยันเลิกงาน' })) return;
@@ -64,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── ฟอร์มขอลางาน ─────────────────────────────────────────
+    // ── ฟอร์มขอลางาน ──
     document.getElementById('leave-form')?.addEventListener('submit', async (e) => {
         e.preventDefault(); e.stopPropagation();
 
@@ -107,17 +96,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── ช่องค้นหาประวัติลา ──────────────────────────────────
+    // ── ช่องค้นหาประวัติลา ──
     document.getElementById('search-leave')?.addEventListener('input', () => {
         currentLeavePage = 1;
         renderLeaveTable();
     });
 
 });
-
-// ============================================================
-// NAVIGATION — global เพราะ HTML เรียก onclick=
-// ============================================================
 
 // ปิด welcome banner
 function closeAlert() {
@@ -153,10 +138,6 @@ function switchPage(event, pageId, clickedLink) {
     })[pageId]?.();
 }
 
-// ============================================================
-// นาฬิกา
-// ============================================================
-
 // อัปเดตเวลาและวันที่แบบ real-time
 function updateClock() {
     const now = new Date();
@@ -184,9 +165,7 @@ function updateTimelineStatus(state) {
     }
 }
 
-// ============================================================
 // ข่าวสาร & โปรไฟล์
-// ============================================================
 
 // โหลดและแสดงประกาศข่าวสารจาก Admin
 async function loadAnnouncements() {
@@ -232,10 +211,6 @@ async function loadUserProfile() {
         console.error('Profile Load Error:', err);
     }
 }
-
-// ============================================================
-// Dashboard พนักงาน
-// ============================================================
 
 // โหลดข้อมูล Dashboard: โควตาลา, ประวัติลาล่าสุด, สลิปเงินเดือน
 async function loadEmployeeDashboard() {
@@ -312,10 +287,6 @@ async function loadEmployeeDashboard() {
     }
 }
 
-// ============================================================
-// ประวัติการลงเวลา
-// ============================================================
-
 // โหลดประวัติลงเวลา 30 วันล่าสุด
 async function loadAttendanceHistory() {
     const tbody = document.getElementById('history-table-body');
@@ -385,10 +356,6 @@ function updateTodaySummary(w, o) {
         </div>`;
 }
 
-// ============================================================
-// ประวัติการลางาน
-// ============================================================
-
 // โหลดประวัติการลางานทั้งหมดของพนักงาน
 async function loadLeaveHistory() {
     if (!empId) return;
@@ -403,7 +370,7 @@ async function loadLeaveHistory() {
     }
 }
 
-// Render ตารางประวัติลา (รองรับ search และ pagination)
+// Render ตารางประวัติลา
 function renderLeaveTable() {
     const tbody = document.getElementById('leave-history-body');
     if (!tbody) return;
@@ -433,10 +400,6 @@ function renderLeaveTable() {
         renderLeaveTable();
     });
 }
-
-// ============================================================
-// Leave Form Helpers — global เพราะ HTML เรียก onclick=
-// ============================================================
 
 // เลือกประเภทการลาผ่าน pill button
 function selectLeavePill(el, val) {

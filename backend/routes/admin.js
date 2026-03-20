@@ -5,16 +5,13 @@ const bcrypt  = require('bcrypt');
 
 const SALT_ROUNDS = 10;
 
-// map leave_type → column ใน leave_balances
 const LEAVE_BALANCE_COLUMN = {
     sick:     'sick_leave_remaining',
     personal: 'personal_leave_remaining',
     annual:   'annual_leave_remaining',
 };
 
-// ============================================================
-// GET /leaves/pending — ใบลาที่รอพิจารณา (เฉพาะ user)
-// ============================================================
+// GET /leaves/pending — ใบลาที่รอพิจารณา
 router.get('/leaves/pending', async (req, res) => {
     try {
         const [results] = await db.query(
@@ -31,9 +28,7 @@ router.get('/leaves/pending', async (req, res) => {
     }
 });
 
-// ============================================================
 // GET /salary-report — รายงานสรุปเงินเดือนรายเดือน
-// ============================================================
 router.get('/salary-report', async (req, res) => {
     try {
         const month = req.query.month || new Date().getMonth() + 1;
@@ -78,9 +73,7 @@ router.get('/salary-report', async (req, res) => {
     }
 });
 
-// ============================================================
 // GET /departments — ดึงรายชื่อแผนกทั้งหมด
-// ============================================================
 router.get('/departments', async (req, res) => {
     try {
         const [results] = await db.query('SELECT * FROM departments');
@@ -91,9 +84,7 @@ router.get('/departments', async (req, res) => {
     }
 });
 
-// ============================================================
 // GET /dashboard-stats — สถิติภาพรวมใบลาเดือนปัจจุบัน
-// ============================================================
 router.get('/dashboard-stats', async (req, res) => {
     try {
         const [results] = await db.query(
@@ -119,9 +110,7 @@ router.get('/dashboard-stats', async (req, res) => {
     }
 });
 
-// ============================================================
 // PUT /employees/:id — แก้ไขข้อมูลพนักงาน
-// ============================================================
 router.put('/employees/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -147,10 +136,7 @@ router.put('/employees/:id', async (req, res) => {
     }
 });
 
-// ============================================================
 // PUT /leaves/update-status — อนุมัติ / ปฏิเสธ ใบลา
-// ถ้าอนุมัติ → หักโควตาวันลาใน leave_balances อัตโนมัติ
-// ============================================================
 router.put('/leaves/update-status', async (req, res) => {
     try {
         const { leave_id, status } = req.body;
@@ -203,9 +189,7 @@ router.put('/leaves/update-status', async (req, res) => {
     }
 });
 
-// ============================================================
-// GET /employees/all — รายชื่อพนักงานทั้งหมด (เฉพาะ user)
-// ============================================================
+// GET /employees/all — รายชื่อพนักงานทั้งหมด
 router.get('/employees/all', async (req, res) => {
     try {
         const [results] = await db.query(
@@ -226,9 +210,7 @@ router.get('/employees/all', async (req, res) => {
     }
 });
 
-// ============================================================
 // POST /employees/add — เพิ่มพนักงานใหม่ (hash password ก่อน save)
-// ============================================================
 router.post('/employees/add', async (req, res) => {
     try {
         const { emp_id, first_name, last_name, password, role, dept_id, hourly_rate } = req.body;
@@ -263,9 +245,7 @@ router.post('/employees/add', async (req, res) => {
     }
 });
 
-// ============================================================
 // DELETE /employees/:emp_id — ลบพนักงานและข้อมูลที่เกี่ยวข้อง
-// ============================================================
 router.delete('/employees/:emp_id', async (req, res) => {
     try {
         const { emp_id } = req.params;
@@ -278,9 +258,7 @@ router.delete('/employees/:emp_id', async (req, res) => {
     }
 });
 
-// ============================================================
 // POST /announcements — สร้างประกาศใหม่
-// ============================================================
 router.post('/announcements', async (req, res) => {
     try {
         const { title, content } = req.body;
@@ -298,9 +276,7 @@ router.post('/announcements', async (req, res) => {
     }
 });
 
-// ============================================================
 // GET /announcements — ดึงประกาศทั้งหมด
-// ============================================================
 router.get('/announcements', async (req, res) => {
     try {
         const [results] = await db.query(
@@ -313,9 +289,7 @@ router.get('/announcements', async (req, res) => {
     }
 });
 
-// ============================================================
 // DELETE /announcements/:id — ลบประกาศ
-// ============================================================
 router.delete('/announcements/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -327,9 +301,7 @@ router.delete('/announcements/:id', async (req, res) => {
     }
 });
 
-// ============================================================
-// GET /leave-history — ประวัติการลาทั้งหมด (เฉพาะ user)
-// ============================================================
+// GET /leave-history — ประวัติการลาทั้งหมด 
 router.get('/leave-history', async (req, res) => {
     try {
         const [results] = await db.query(

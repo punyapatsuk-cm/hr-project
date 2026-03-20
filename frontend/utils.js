@@ -1,12 +1,6 @@
-// ============================================================
-// utils.js — Shared utilities สำหรับทุกหน้า
-// โหลดไฟล์นี้ก่อน home.js และ admin.js เสมอ
-// ============================================================
+// ── Config ──
+const API_BASE = 'http://localhost:1304';
 
-// ── Config ───────────────────────────────────────────────────
-const API_BASE = 'http://localhost:1304'; // แก้ที่นี่ที่เดียวถ้าเปลี่ยน host/port
-
-// ── Constants ────────────────────────────────────────────────
 const LEAVE_TYPE_LABELS = {
     sick:           'ลาป่วย',
     personal:       'ลากิจ',
@@ -31,21 +25,13 @@ const STATUS_MAP = {
     pending:  { cls: 'badge-pending',  label: 'รอพิจารณา'   },
 };
 
-// ============================================================
-// 🔑 AUTH
-// ============================================================
-
-/** คืน axios config object พร้อม Authorization header */
+/* คืน axios config object พร้อม Authorization header */
 function getAuthHeaders() {
     const token = localStorage.getItem('token');
     return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 }
 
-// ============================================================
-// 🛡️ XSS PROTECTION
-// ============================================================
-
-/** Escape HTML entities ก่อน inject ลง innerHTML ทุกครั้ง */
+/* Escape HTML entities ก่อน inject ลง innerHTML ทุกครั้ง */
 function escapeHtml(str) {
     return String(str ?? '')
         .replace(/&/g, '&amp;')
@@ -55,28 +41,20 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// ============================================================
-// 📅 DATE HELPERS
-// ============================================================
-
-/** แปลง dateStr เป็น วัน/เดือน/ปี ไทย — คืน '-' ถ้าข้อมูลไม่ถูกต้อง */
+/** แปลง dateStr เป็น วัน/เดือน/ปี */
 function safeDate(dateStr) {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('th-TH');
 }
 
-/** คำนวณจำนวนวันระหว่าง 2 วันที่ (รวมวันแรกและวันสุดท้าย) */
+/** คำนวณจำนวนวันระหว่าง 2 วันที่ */
 function calcDiffDays(startDate, endDate) {
     if (!startDate || !endDate) return '-';
     const s = new Date(startDate);
     const e = new Date(endDate);
     return Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
 }
-
-// ============================================================
-// 🏷️ BADGE / LABEL HELPERS
-// ============================================================
 
 /** คืน HTML ของ badge สถานะใบลา */
 function renderStatusBadge(status) {
@@ -94,17 +72,6 @@ function leaveLabelShort(type) {
     return LEAVE_TYPE_SHORT[type] || type || '-';
 }
 
-// ============================================================
-// 📄 PAGINATION
-// ============================================================
-
-/**
- * วาดปุ่ม pagination ลงใน element ที่กำหนด
- * @param {string} containerId  — id ของ div ที่จะวางปุ่ม
- * @param {number} totalPages   — จำนวนหน้าทั้งหมด
- * @param {number} currentPage  — หน้าปัจจุบัน
- * @param {Function} onPageClick — callback รับ pageNumber เมื่อกด
- */
 function renderPaginationButtons(containerId, totalPages, currentPage, onPageClick) {
     const div = document.getElementById(containerId);
     if (!div) return;
@@ -126,9 +93,6 @@ function renderPaginationButtons(containerId, totalPages, currentPage, onPageCli
     }
 }
 
-// ============================================================
-// 🔔 TOAST NOTIFICATION
-// ============================================================
 (function initToast() {
     const style = document.createElement('style');
     style.textContent = `
@@ -150,12 +114,6 @@ function renderPaginationButtons(containerId, totalPages, currentPage, onPageCli
     document.body.appendChild(c);
 })();
 
-/**
- * แสดง toast notification
- * @param {string} msg       — ข้อความ
- * @param {'success'|'error'|'info'|'warn'} type
- * @param {number} duration  — มิลลิวินาที (default 3500)
- */
 function showToast(msg, type = 'success', duration = 3500) {
     const icons = {
         success: 'fas fa-check-circle',
@@ -170,9 +128,6 @@ function showToast(msg, type = 'success', duration = 3500) {
     setTimeout(() => { t.classList.add('hide'); setTimeout(() => t.remove(), 320); }, duration);
 }
 
-// ============================================================
-// ❓ CONFIRM DIALOG
-// ============================================================
 (function initConfirmStyle() {
     const style = document.createElement('style');
     style.textContent = `
@@ -193,11 +148,6 @@ function showToast(msg, type = 'success', duration = 3500) {
     document.head.appendChild(style);
 })();
 
-/**
- * แสดง confirm dialog — คืน Promise<boolean>
- * @param {string} msg
- * @param {object} opts — { title, confirmText, cancelText, danger }
- */
 function showConfirm(msg, { title = 'ยืนยันการดำเนินการ', confirmText = 'ยืนยัน', cancelText = 'ยกเลิก', danger = false } = {}) {
     return new Promise(resolve => {
         const ov      = document.createElement('div');

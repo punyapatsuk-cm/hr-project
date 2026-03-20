@@ -1,15 +1,9 @@
-// ============================================================
-// userRoutes.js — Routes สำหรับพนักงานทั่วไป
-// ============================================================
-
 const express         = require('express');
 const router          = express.Router();
 const db              = require('../config/db');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
-// ============================================================
 // GET /api/employee/profile/:emp_id — ข้อมูลโปรไฟล์พนักงาน
-// ============================================================
 router.get('/profile/:emp_id', verifyToken, async (req, res) => {
     try {
         const { emp_id } = req.params;
@@ -39,9 +33,7 @@ router.get('/profile/:emp_id', verifyToken, async (req, res) => {
     }
 });
 
-// ============================================================
 // GET /api/employee/payslip/:emp_id — สลิปเงินเดือนเดือนปัจจุบัน
-// ============================================================
 router.get('/payslip/:emp_id', verifyToken, async (req, res) => {
     try {
         const { emp_id } = req.params;

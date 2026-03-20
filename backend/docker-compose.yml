@@ -19,7 +19,7 @@ services:
     image: phpmyadmin/phpmyadmin
     container_name: hr_phpmyadmin
     ports:
-      - "8080:80"  # เราจะเข้าเว็บผ่านพอร์ต 8080 แทน
+      - "8080:80" 
     environment:
       PMA_HOST: hr-db
       MYSQL_ROOT_PASSWORD: root

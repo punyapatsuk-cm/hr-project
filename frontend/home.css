@@ -1,8 +1,3 @@
-/* ============================================================
-   home.css — สไตล์สำหรับหน้า Employee Dashboard (home.html)
-   ============================================================ */
-
-/* ── CSS Custom Properties (ตัวแปรสี / ระยะห่าง) ─────────── */
 :root {
     --green:       #00b894;
     --green-dark:  #00916e;
@@ -22,7 +17,7 @@
     --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* ── CSS Reset ─────────────────────────────────────────────── */
+/* ── CSS Reset ─── */
 *,
 *::before,
 *::after {
@@ -31,7 +26,7 @@
     padding: 0;
 }
 
-/* ── Body ──────────────────────────────────────────────────── */
+/* ── Body ──*/
 body {
     font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif;
     background: var(--bg-page);
@@ -39,9 +34,7 @@ body {
     font-size: 15px;
 }
 
-/* ============================================================
-   LAYOUT — โครงสร้างหลัก Sidebar + Main
-   ============================================================ */
+/* LAYOUT — โครงสร้างหลัก Sidebar + Main*/
 .dashboard-layout {
     display: flex;
     height: 100vh;
@@ -61,9 +54,7 @@ body {
     padding: 28px 32px;
 }
 
-/* ============================================================
-   SIDEBAR — แถบเมนูด้านซ้าย
-   ============================================================ */
+/* SIDEBAR — แถบเมนูด้านซ้าย*/
 .sidebar {
     width: 260px;
     background: var(--sidebar-bg);
@@ -119,9 +110,7 @@ body {
 .sidebar-menu li.logout a       { color: #ff7675; }
 .sidebar-menu li.logout a:hover { background: rgba(255, 118, 117, 0.1); color: #ff4d4d; }
 
-/* ============================================================
-   TOPBAR — แถบด้านบน
-   ============================================================ */
+/* TOPBAR — แถบด้านบน */
 .topbar {
     background: var(--white);
     border-bottom: 1px solid var(--border);
@@ -155,9 +144,7 @@ body {
 
 .topbar-user { font-size: 0.85rem; color: var(--text-mid); font-weight: 600; }
 
-/* ============================================================
-   PAGE TRANSITION — Animation ตอนสลับหน้า
-   ============================================================ */
+/* PAGE TRANSITION — Animation ตอนสลับหน้า */
 .page-section { animation: fadein 0.22s ease; }
 
 @keyframes fadein {
@@ -165,9 +152,7 @@ body {
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ============================================================
-   SECTION HEADER — หัวข้อแต่ละส่วน
-   ============================================================ */
+/* SECTION HEADER — หัวข้อแต่ละส่วน*/
 .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
 .section-header h2 { font-size: 1.15rem; font-weight: 700; color: var(--text-dark); }
 
@@ -183,9 +168,7 @@ body {
     font-size: 0.95em;
 }
 
-/* ============================================================
-   WELCOME BANNER — แบนเนอร์ต้อนรับ (ปิดได้)
-   ============================================================ */
+/* WELCOME BANNER — แบนเนอร์ต้อนรับ (ปิดได้)*/
 .welcome-banner {
     background: linear-gradient(135deg, var(--green) 0%, var(--teal) 100%);
     border-radius: var(--radius-md);
@@ -219,9 +202,7 @@ body {
 
 .welcome-banner .wb-close:hover { background: rgba(255, 255, 255, 0.35); }
 
-/* ============================================================
-   CARDS — กล่องเนื้อหาทั่วไป
-   ============================================================ */
+/* CARDS — กล่องเนื้อหาทั่วไป */
 .card {
     background: var(--white);
     border-radius: var(--radius-md);
@@ -243,9 +224,7 @@ body {
 .card-header h3 i { color: var(--green); }
 .card-body        { padding: 18px 22px; }
 
-/* ============================================================
-   QUOTA CARDS — กล่องสรุปวันลาบน Dashboard
-   ============================================================ */
+/* QUOTA CARDS — กล่องสรุปวันลาบน Dashboard*/
 .quota-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -281,9 +260,7 @@ body {
 .qc-person { border-top: 3px solid #e67e22; } .qc-person .qc-value { color: #e67e22; } .qc-person .qc-bar { background: #e67e22; } .qc-person .qc-icon { background: #fef3e2; color: #e67e22; }
 .qc-annual { border-top: 3px solid var(--green); } .qc-annual .qc-value { color: var(--green); } .qc-annual .qc-bar { background: var(--green); } .qc-annual .qc-icon { background: var(--green-light); color: var(--green); }
 
-/* ============================================================
-   TABLES — ตารางข้อมูล
-   ============================================================ */
+/* TABLES — ตารางข้อมูล */
 .tbl-wrap { overflow-x: auto; }
 
 table { width: 100%; border-collapse: collapse; }
@@ -311,9 +288,7 @@ tbody td {
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover td      { background: #fafcfd; }
 
-/* ============================================================
-   BADGES — ป้ายสถานะ
-   ============================================================ */
+/* BADGES — ป้ายสถานะ*/
 .badge {
     display: inline-flex;
     align-items: center;
@@ -328,9 +303,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .badge-approved { background: var(--green-light); color: var(--green-dark); }
 .badge-rejected { background: #fdecea; color: #c0392b; }
 
-/* ============================================================
-   BUTTONS — ปุ่มต่างๆ
-   ============================================================ */
+/* BUTTONS — ปุ่มต่างๆ */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -352,9 +325,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .btn-danger-outline       { background: transparent; color: #e74c3c; border: 1.5px solid #e74c3c; }
 .btn-danger-outline:hover { background: #fdecea; }
 
-/* ============================================================
-   CLOCK-IN / OUT CARD — กล่องบันทึกเวลาเข้า-ออกงาน
-   ============================================================ */
+/* CLOCK-IN / OUT CARD — กล่องบันทึกเวลาเข้า-ออกงาน*/
 .clock-card {
     background: var(--white);
     border-radius: var(--radius-lg);
@@ -434,9 +405,7 @@ tbody tr:hover td      { background: #fafcfd; }
 
 .clock-divider { border: none; border-top: 1px dashed var(--border); margin: 16px 0; }
 
-/* ============================================================
-   TIMELINE — แสดงกิจกรรมวันนี้
-   ============================================================ */
+/* TIMELINE — แสดงกิจกรรมวันนี้*/
 .timeline { position: relative; padding-left: 18px; }
 
 .timeline::before {
@@ -470,9 +439,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .tl-title  { font-weight: 700; font-size: 0.82rem; color: var(--text-dark); margin-bottom: 3px; }
 .tl-detail { font-size: 0.76rem; color: var(--text-mid); }
 
-/* ============================================================
-   PAYSLIP CARD — การ์ดสลิปเงินเดือน
-   ============================================================ */
+/* PAYSLIP CARD — การ์ดสลิปเงินเดือน */
 .payslip-card {
     background: var(--white);
     border-radius: var(--radius-md);
@@ -546,9 +513,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .btn-payslip:hover    { opacity: 0.9; transform: translateY(-1px); }
 .btn-payslip:disabled { background: #e0e4e8; color: var(--text-light); box-shadow: none; cursor: not-allowed; transform: none; }
 
-/* ============================================================
-   LEAVE FORM CARD — ฟอร์มขอลางาน
-   ============================================================ */
+/* LEAVE FORM CARD — ฟอร์มขอลางาน */
 .leave-form-card {
     background: var(--white);
     border-radius: var(--radius-lg);
@@ -678,9 +643,7 @@ tbody tr:hover td      { background: #fafcfd; }
 
 .lf-submit:hover { opacity: 0.9; transform: translateY(-1px); }
 
-/* ============================================================
-   PROFILE PAGE — ข้อมูลส่วนตัว
-   ============================================================ */
+/* PROFILE PAGE — ข้อมูลส่วนตัว*/
 .profile-info-table { width: 100%; }
 
 .profile-info-table tr td:first-child {
@@ -716,9 +679,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .pq-person .pq-value { color: #e67e22; }
 .pq-annual .pq-value { color: var(--green); }
 
-/* ============================================================
-   ANNOUNCEMENT ITEMS — กล่องประกาศข่าวสาร
-   ============================================================ */
+/* ANNOUNCEMENT ITEMS — กล่องประกาศข่าวสาร */
 .announce-item {
     background: #fffaf5;
     border: 1px solid #fde8cc;
@@ -733,9 +694,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .announce-item-body        { font-size: 0.84rem; color: var(--text-mid); line-height: 1.7; }
 .announce-item-date        { font-size: 0.72rem; color: var(--text-light); margin-top: 6px; }
 
-/* ============================================================
-   EMPTY STATE — ข้อความเมื่อไม่มีข้อมูล
-   ============================================================ */
+/* EMPTY STATE — ข้อความเมื่อไม่มีข้อมูล*/
 .empty-state {
     text-align: center;
     padding: 30px 20px;
@@ -745,10 +704,6 @@ tbody tr:hover td      { background: #fafcfd; }
 
 .empty-state i { font-size: 2rem; margin-bottom: 10px; display: block; opacity: 0.4; }
 
-/* ============================================================
-   LAYOUT GRIDS — สำหรับแต่ละ page section
-   (ย้ายออกจาก inline style="display:grid..." ใน HTML)
-   ============================================================ */
 
 /* Dashboard bottom: ตารางลา + สลิป */
 .grid-dash-main {
@@ -782,9 +737,6 @@ tbody tr:hover td      { background: #fafcfd; }
     align-items: flex-start;
 }
 
-/* ============================================================
-   UTILITIES
-   ============================================================ */
 
 /* ซ่อน/แสดงหน้าด้วย class แทน inline style */
 .page-section         { display: none; }
@@ -804,12 +756,7 @@ tbody tr:hover td      { background: #fafcfd; }
 /* ปุ่มขนาดเล็ก (เช่น "ดูทั้งหมด") */
 .btn-sm { font-size: 0.76rem; padding: 5px 12px; }
 
-/* ============================================================
-   SPECIFIC ELEMENT STYLES
-   (ย้ายออกจาก inline style="" บน element เดี่ยวๆ)
-   ============================================================ */
 
-/* หัว label "กิจกรรมวันนี้" ใน timeline */
 .timeline-label {
     font-size: 0.78rem;
     font-weight: 700;
@@ -820,14 +767,8 @@ tbody tr:hover td      { background: #fafcfd; }
 /* summary bar ใต้ตารางลงเวลา */
 #today-work-summary { padding: 0 18px; }
 
-/* โปรไฟล์ — รหัสพนักงาน + เรทค่าจ้าง ใช้สีเขียว */
 #profile-emp-id,
 #profile-hourly-rate { color: var(--green); }
-
-/* ============================================================
-   TABLE COLUMN WIDTHS & HEADER COLORS
-   (ย้ายออกจาก colgroup style="" และ th style="")
-   ============================================================ */
 
 /* ตาราง fixed layout ทั่วไป */
 .tbl-fixed { table-layout: fixed; width: 100%; }
@@ -852,9 +793,7 @@ tbody tr:hover td      { background: #fafcfd; }
 /* ตารางประวัติลาล่าสุด (dashboard) */
 #tbl-recent-leave th:first-child { text-align: left; }
 #tbl-recent-leave th             { text-align: center; }
-/* ============================================================
-   UTILITY CLASSES — แทน inline style ใน home.js
-   ============================================================ */
+
 .text-center  { text-align: center; }
 .text-mid     { color: var(--text-mid); }
 .text-light   { color: var(--text-light); }
@@ -869,12 +808,12 @@ tbody tr:hover td      { background: #fafcfd; }
 .fw-700       { font-weight: 700; }
 .empty-row    { padding: 20px; text-align: center; color: var(--text-light); }
 
-/* ── Timeline status ──────────────────────────────────────── */
+/* ── Timeline status ── */
 .tl-status-in  { color: #00a86b; font-weight: bold; }
 .tl-status-out { color: #e74c3c; font-weight: bold; }
 .tl-status-sub { font-size: 0.85em; color: #7f8c8d; }
 
-/* ── Today Summary Grid ───────────────────────────────────── */
+/* ── Today Summary Grid ──*/
 .today-summary-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -900,7 +839,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .today-progress-bar   { background: #eef0f3; border-radius: 10px; height: 8px; overflow: hidden; }
 .today-progress-pct   { text-align: right; font-size: 0.75rem; font-weight: 700; margin-top: 4px; }
 
-/* ── Announce item header ─────────────────────────────────── */
+/* ── Announce item header ──*/
 .announce-item-header {
     display: flex;
     justify-content: space-between;
@@ -915,7 +854,7 @@ tbody tr:hover td      { background: #fafcfd; }
     white-space: nowrap; flex-shrink: 0;
 }
 
-/* ── Payslip preview ──────────────────────────────────────── */
+/* ── Payslip preview ── */
 .payslip-preview      { background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px dashed #ccc; }
 .payslip-period-label { margin: 0 0 5px; color: #7f8c8d; font-size: 0.9em; }
 .payslip-period       { margin: 0 0 15px; color: #2c3e50; font-size: 1.2em; }

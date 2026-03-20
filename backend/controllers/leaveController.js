@@ -1,15 +1,8 @@
-// ============================================================
-// leaveController.js — จัดการการขอลางานและดึงประวัติ
-// ============================================================
-
 const db = require('../config/db');
 
-// ประเภทการลาที่รับได้ — ป้องกันค่าแปลกปลอมลง DB
 const VALID_LEAVE_TYPES = ['sick', 'personal', 'annual'];
 
-// ============================================================
-// requestLeave — ส่งคำขอลางาน
-// ============================================================
+// ส่งคำขอลางาน
 exports.requestLeave = async (req, res) => {
     try {
         const { emp_id, leave_type, start_date, end_date, reason } = req.body;
@@ -20,7 +13,7 @@ exports.requestLeave = async (req, res) => {
             return res.status(400).json({ message: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
         }
 
-        // ตรวจสอบประเภทการลา
+        // ประเภทการลา
         if (!VALID_LEAVE_TYPES.includes(leave_type)) {
             return res.status(400).json({
                 message: `ประเภทการลาไม่ถูกต้อง (รับเฉพาะ: ${VALID_LEAVE_TYPES.join(', ')})`
@@ -46,9 +39,7 @@ exports.requestLeave = async (req, res) => {
     }
 };
 
-// ============================================================
-// getLeaveHistory — ดึงประวัติการลางานทั้งหมดของพนักงาน
-// ============================================================
+// ดึงประวัติการลางานทั้งหมดของพนักงาน
 exports.getLeaveHistory = async (req, res) => {
     try {
         const { emp_id } = req.params;

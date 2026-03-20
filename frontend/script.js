@@ -1,10 +1,4 @@
-// ============================================================
-// script.js — Logic สำหรับหน้า Login (login.html)
-// ============================================================
-
-// API_BASE มาจาก utils.js — ห้ามประกาศซ้ำที่นี่
-
-// ── แสดง/ซ่อน Error ─────────────────────────────────────────
+// ── แสดง/ซ่อน Error ──
 function showLoginError(msg) {
     const el    = document.getElementById('login-error');
     const msgEl = document.getElementById('login-error-msg');
@@ -18,7 +12,7 @@ function hideLoginError() {
     if (el) el.classList.remove('show');
 }
 
-// ── init Login Form ─────────────────────────────────────────
+// ── init Login Form ───
 function initLogin() {
     const form = document.getElementById('login-form');
     if (!form) return;

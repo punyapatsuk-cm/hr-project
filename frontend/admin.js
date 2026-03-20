@@ -1,23 +1,14 @@
-// ============================================================
-// admin.js — Frontend สำหรับหน้า HR Admin Dashboard
-// ต้องโหลด utils.js ก่อนไฟล์นี้เสมอ (API_BASE, helpers อยู่ใน utils.js)
-// ============================================================
-
-// ── ตรวจสอบสิทธิ์ ──────────────────────────────────────────
 const adminEmpId = localStorage.getItem('employeeId');
 const adminRole  = localStorage.getItem('userRole');
 if (!adminEmpId || adminRole !== 'admin') window.location.href = 'login.html';
 
 const API_URL = `${API_BASE}/api/admin`;
 
-// ── State ───────────────────────────────────────────────────
 let allAdminLeaveRecords = [];
 let currentAdminPage     = 1;
 let workHoursChartInstance = null;
 
-// ============================================================
 // SECTION 1 — แผนก
-// ============================================================
 
 // โหลดรายชื่อแผนกลงใน <select> ทั้งฟอร์มเพิ่มและฟอร์มแก้ไข
 async function loadDepartments() {
@@ -36,9 +27,8 @@ async function loadDepartments() {
     }
 }
 
-// ============================================================
+
 // SECTION 2 — ใบลางาน (รอพิจารณา)
-// ============================================================
 
 // โหลดใบลาที่รอพิจารณาและแสดงในตาราง
 async function loadPendingLeaves() {
@@ -110,9 +100,7 @@ async function handleLeaveAction(leaveId, eid, leaveType, status, days) {
     }
 }
 
-// ============================================================
 // SECTION 3 — Dashboard Stats
-// ============================================================
 
 // อัปเดตตัวเลขสถิติ 4 กล่องบน Dashboard
 async function updateDashboardStats() {
@@ -128,9 +116,7 @@ async function updateDashboardStats() {
     }
 }
 
-// ============================================================
 // SECTION 4 — จัดการพนักงาน
-// ============================================================
 
 // โหลดรายชื่อพนักงานลงตารางและตารางโควตา
 async function fetchAllEmployees() {
@@ -222,9 +208,7 @@ function closeEditModal() {
     document.getElementById('editEmployeeModal').style.display = 'none';
 }
 
-// ============================================================
 // SECTION 5 — รายงานเงินเดือน
-// ============================================================
 
 // โหลดรายงานเงินเดือนตามเดือนที่เลือก
 async function loadSalaryReport() {
@@ -343,9 +327,7 @@ function exportSalaryCSV() {
     document.body.removeChild(link);
 }
 
-// ============================================================
 // SECTION 6 — ประกาศข่าวสาร
-// ============================================================
 
 // โหลดรายการประกาศทั้งหมด
 async function loadAnnouncementsAdmin() {
@@ -390,9 +372,7 @@ async function deleteAnnouncement(id) {
     }
 }
 
-// ============================================================
 // SECTION 7 — ประวัติการลาทั้งหมด
-// ============================================================
 
 // โหลดและแสดงประวัติการลาทั้งหมด
 async function fetchAndRenderAllLeaveHistory() {
@@ -458,9 +438,7 @@ function renderLeaveHistoryRow(item) {
     </tr>`;
 }
 
-// ============================================================
 // SECTION 8 — Navigation
-// ============================================================
 
 // สลับหน้าใน Dashboard
 function switchPage(event, pageId, clickedLink) {
@@ -488,9 +466,8 @@ function switchPage(event, pageId, clickedLink) {
     pageActions[pageId]?.();
 }
 
-// ============================================================
 // SECTION 9 — Init (DOMContentLoaded)
-// ============================================================
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // แสดงชื่อ admin ใน sidebar

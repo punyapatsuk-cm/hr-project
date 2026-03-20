@@ -1,8 +1,3 @@
-/* ============================================================
-   admin.css — สไตล์สำหรับหน้า Admin Dashboard (admin.html)
-   ============================================================ */
-
-/* ── CSS Custom Properties (ตัวแปรสี / ระยะห่าง) ─────────── */
 :root {
     --green:       #00b894;
     --green-dark:  #00916e;
@@ -22,7 +17,7 @@
     --shadow-md:   0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* ── CSS Reset ─────────────────────────────────────────────── */
+/* ── CSS Reset ──*/
 *,
 *::before,
 *::after {
@@ -31,7 +26,7 @@
     padding: 0;
 }
 
-/* ── Body ──────────────────────────────────────────────────── */
+/* ── Body ──*/
 body {
     font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif;
     background: var(--bg-page);
@@ -39,9 +34,7 @@ body {
     font-size: 15px;
 }
 
-/* ============================================================
-   LAYOUT — โครงสร้างหลัก Sidebar + Main
-   ============================================================ */
+/* LAYOUT — โครงสร้างหลัก Sidebar + Main */
 .dashboard-layout {
     display: flex;
     height: 100vh;
@@ -61,9 +54,7 @@ body {
     padding: 28px 32px;
 }
 
-/* ============================================================
-   SIDEBAR — แถบเมนูด้านซ้าย
-   ============================================================ */
+/* SIDEBAR — แถบเมนูด้านซ้าย */
 .sidebar {
     width: 260px;
     background: var(--sidebar-bg);
@@ -119,9 +110,7 @@ body {
 .sidebar-menu li.logout a         { color: #ff7675; }
 .sidebar-menu li.logout a:hover   { background: rgba(255, 118, 117, 0.1); color: #ff4d4d; }
 
-/* ============================================================
-   TOPBAR — แถบด้านบน
-   ============================================================ */
+/* TOPBAR — แถบด้านบน*/
 .topbar {
     background: var(--white);
     border-bottom: 1px solid var(--border);
@@ -162,9 +151,7 @@ body {
     border-radius: 20px;
 }
 
-/* ============================================================
-   PAGE TRANSITION — Animation ตอนสลับหน้า
-   ============================================================ */
+/* PAGE TRANSITION — Animation ตอนสลับหน้า */
 .page-section {
     animation: fadein 0.22s ease;
 }
@@ -174,9 +161,7 @@ body {
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ============================================================
-   SECTION HEADER — หัวข้อแต่ละส่วน
-   ============================================================ */
+/*  HEADER — หัวข้อแต่ละส่วน */
 .section-header {
     display: flex;
     align-items: center;
@@ -198,9 +183,7 @@ body {
     font-size: 0.95em;
 }
 
-/* ============================================================
-   STAT CARDS — กล่องสถิติ 4 กล่องบน Dashboard
-   ============================================================ */
+/* STAT CARDS — กล่องสถิติ 4 กล่องบน Dashboard*/
 .stat-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -232,9 +215,7 @@ body {
 .sc-green { border-top: 3px solid var(--green); } .sc-green .sc-value { color: var(--green); }
 .sc-red   { border-top: 3px solid #e74c3c; } .sc-red   .sc-value { color: #e74c3c; }
 
-/* ============================================================
-   CARDS — กล่องเนื้อหาทั่วไป
-   ============================================================ */
+/* CARDS — กล่องเนื้อหาทั่วไป*/
 .card {
     background: var(--white);
     border-radius: var(--radius-md);
@@ -257,9 +238,7 @@ body {
 
 .card-body { padding: 18px 22px; }
 
-/* ============================================================
-   TABLES — ตารางข้อมูล
-   ============================================================ */
+/* TABLES — ตารางข้อมูล*/
 .tbl-wrap { overflow-x: auto; }
 
 table { width: 100%; border-collapse: collapse; }
@@ -286,9 +265,7 @@ tbody td {
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover td      { background: #fafcfd; }
 
-/* ============================================================
-   BADGES — ป้ายสถานะ
-   ============================================================ */
+/* BADGES — ป้ายสถานะ*/
 .badge {
     display: inline-flex;
     align-items: center;
@@ -306,9 +283,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .badge-admin    { background: #fff3cd; color: #856404; }
 .badge-user     { background: #d1f0ea; color: #00754a; }
 
-/* ============================================================
-   SEARCH BAR — ช่องค้นหา
-   ============================================================ */
+/* SEARCH BAR — ช่องค้นหา*/
 .search-bar { position: relative; }
 
 .search-bar input {
@@ -326,9 +301,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .search-bar input:focus { outline: none; border-color: var(--green); background: var(--white); }
 .search-bar i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 0.75em; pointer-events: none; }
 
-/* ============================================================
-   BUTTONS — ปุ่มต่างๆ
-   ============================================================ */
+/* BUTTONS — ปุ่มต่างๆ */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -377,15 +350,11 @@ tbody tr:hover td      { background: #fafcfd; }
 
 .actions-cell { display: flex; gap: 6px; justify-content: center; }
 
-/* ============================================================
-   EMPLOYEE TABLE — สไตล์ชื่อและ sub-text ในตาราง
-   ============================================================ */
+/* EMPLOYEE TABLE — สไตล์ชื่อและ sub-text ในตาราง*/
 .emp-name { font-weight: 600; font-size: 0.93rem; }
 .emp-sub  { font-size: 0.79rem; color: var(--text-light); margin-top: 1px; }
 
-/* ============================================================
-   ADD EMPLOYEE FORM — ฟอร์มเพิ่มพนักงานใหม่
-   ============================================================ */
+/* ADD EMPLOYEE FORM — ฟอร์มเพิ่มพนักงานใหม่ */
 .add-emp-card {
     background: var(--white);
     border-radius: var(--radius-lg);
@@ -480,9 +449,7 @@ tbody tr:hover td      { background: #fafcfd; }
 .add-emp-submit:hover  { opacity: 0.9; transform: translateY(-1px); }
 .add-emp-submit:active { transform: scale(0.98); }
 
-/* ============================================================
-   REPORT PAGE — หน้ารายงานเงินเดือน
-   ============================================================ */
+/* REPORT PAGE — หน้ารายงานเงินเดือน */
 .report-toolbar {
     display: flex;
     align-items: center;
@@ -506,9 +473,7 @@ input[type="month"] {
 
 input[type="month"]:focus { outline: none; border-color: var(--green); }
 
-/* ============================================================
-   ANNOUNCEMENTS — ประกาศข่าวสาร
-   ============================================================ */
+/* ANNOUNCEMENTS — ประกาศข่าวสาร*/
 .announce-layout {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -549,9 +514,7 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 .announce-item-body      { font-size: 0.78rem; color: var(--text-mid); line-height: 1.5; }
 .announce-item-date      { font-size: 0.7rem; color: var(--text-light); margin-top: 5px; }
 
-/* ============================================================
-   MODAL — หน้าต่าง Edit ลอยอยู่กลางจอ
-   ============================================================ */
+/* MODAL — หน้าต่าง Edit ลอยอยู่กลางจอ*/
 .modal-overlay {
     display: none;
     position: fixed;
@@ -611,17 +574,11 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 .btn-cancel       { background: #f0f2f5; color: var(--text-mid); }
 .btn-cancel:hover { background: #e0e4e8; }
 
-/* ============================================================
-   QUOTA COLORS — สีตัวเลขโควตาวันลา
-   ============================================================ */
+/* QUOTA COLORS — สีตัวเลขโควตาวันลา*/
 .q-sick   { color: #e74c3c; font-weight: 700; }
 .q-person { color: #e67e22; font-weight: 700; }
 .q-annual { color: var(--green); font-weight: 700; }
 
-/* ============================================================
-   LAYOUT GRIDS
-   (ย้ายออกจาก inline style="display:grid..." ใน HTML)
-   ============================================================ */
 
 /* Dashboard: รายการขอลางาน + โควตา (เคียงกัน) */
 .grid-leave-quota {
@@ -650,9 +607,6 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 /* Dashboard wrapper: flex column */
 .flex-col { display: flex; flex-direction: column; gap: 18px; }
 
-/* ============================================================
-   UTILITIES
-   ============================================================ */
 
 .page-section        { display: none; }
 .page-section.active { display: block; animation: fadein 0.22s ease; }
@@ -669,10 +623,7 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 /* section-header ภายใน toolbar (ไม่ต้องการ margin) */
 .section-header.no-margin { margin: 0; }
 
-/* ============================================================
-   STATUS LEGEND — จุดสีใน card-header ประวัติการลา
-   (ย้ายออกจาก inline style บน span)
-   ============================================================ */
+
 
 .legend-row   { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: var(--text-mid); font-weight: 600; }
 .legend-item  { display: flex; align-items: center; gap: 5px; }
@@ -683,10 +634,6 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 
 /* actions area ด้านขวาของ card-header */
 .card-header-actions { display: flex; align-items: center; gap: 16px; }
-
-/* ============================================================
-   SPECIFIC ELEMENT STYLES
-   ============================================================ */
 
 /* Add-employee card ติดด้านบน */
 .add-emp-card.sticky { margin-bottom: 0; position: sticky; top: 0; }
@@ -714,10 +661,6 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 
 /* modal-field ใน modal-grid ไม่มี margin */
 .modal-grid .modal-field { margin: 0; }
-
-/* ============================================================
-   TABLE COLUMN WIDTHS & HEADER COLORS
-   ============================================================ */
 
 .tbl-fixed { table-layout: fixed; width: 100%; }
 
@@ -767,9 +710,7 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 #salary-table th.col-sick       { color: #e74c3c; }
 #salary-table th.col-personal   { color: #f39c12; }
 #salary-table th.col-total      { color: var(--green); }
-/* ============================================================
-   UTILITY CLASSES — แทน inline style ใน admin.js
-   ============================================================ */
+
 .text-center  { text-align: center; }
 .text-mid     { color: var(--text-mid); }
 .text-light   { color: var(--text-light); }
@@ -790,7 +731,7 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
 .mt-3         { margin-top: 3px; }
 .p-16         { padding: 16px; }
 
-/* ── Salary report badges ─────────────────────────────────── */
+/* ── Salary report badges ─*/
 .badge-work {
     background: #eaf4fb; color: #2176ae;
     padding: 3px 10px; border-radius: 20px;
@@ -808,7 +749,6 @@ input[type="month"]:focus { outline: none; border-color: var(--green); }
     font-weight: 700; font-size: 0.82rem;
 }
 
-/* ── Announce card (แทน inline style ใน renderAnnouncementItem) ── */
 .announce-card {
     background: #f8fafc;
     border: 1px solid var(--border);

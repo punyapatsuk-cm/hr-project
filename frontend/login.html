@@ -8,13 +8,13 @@
     <style>
         :root { --green:#00b894; --green-dark:#00916e; --teal:#00cec9; --dark:#1e2d3d; }
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-        body { font-family:'Segoe UI','Noto Sans Thai',sans-serif; background:linear-gradient(135deg,#e8f8f4 0%,#f0f9f7 50%,#e0f5f0 100%); min-height:100vh; display:flex; justify-content:center; align-items:center; }
+        body { font-family:'Segoe UI','Noto Sans Thai',sans-serif; background:linear-gradient(135deg,#9ff7e1 0%,#d1f3ec 50%,#c0f5e9 100%); min-height:100vh; display:flex; justify-content:center; align-items:center; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
         /* WELCOME */
         #welcome-screen { text-align:center; animation:fadeUp 0.6s ease; }
         .logo-circle { width:80px;height:80px;background:linear-gradient(135deg,var(--green),var(--teal));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 24px rgba(0,184,148,.35); }
-        .logo-circle i { font-size:2rem;color:#fff; }
+        .logo-circle i { font-size:2rem;color:#312020; }
         .system-title { font-size:2.8rem;font-weight:800;color:var(--dark);letter-spacing:-0.5px;margin-bottom:6px; }
         .system-title span { color:var(--green); }
         .system-subtitle { font-size:1rem;color:#6b8a7a;margin-bottom:36px;letter-spacing:1px; }
@@ -51,7 +51,7 @@
 
 <div id="welcome-screen">
     <div class="logo-circle"><i class="fas fa-building"></i></div>
-    <h1 class="system-title">Employee<span>System</span></h1>
+    <h1 class="system-title">Employee<span> System</span></h1>
     <p class="system-subtitle">ระบบจัดการพนักงาน</p>
     <button class="enter-button" onclick="showLogin()">
         <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบบันทึกเวลา
