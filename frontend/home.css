@@ -1004,8 +1004,9 @@ tbody tr:hover td      { background: #fafcfd; }
 .prof-rate-value {
     font-size: 1.45rem;
     font-weight: 800;
-    color: #a8f0e0;
+    color: #ffffff;
     white-space: nowrap;
+    text-shadow: 0 3px 20px rgba(3, 3, 3, 0.2);
 }
 
 /* Section Title */
