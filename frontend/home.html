@@ -159,45 +159,84 @@
 
             <!-- ═══ PAGE: PROFILE ═══ -->
             <div id="page-profile" class="page-section">
-                <div class="section-header">
-                    <div class="sh-icon"><i class="fas fa-user-circle"></i></div>
-                    <h2>ข้อมูลส่วนตัวของฉัน</h2>
-                </div>
-                <div class="grid-2col">
-                    <div class="card mb-0">
-                        <div class="card-header"><h3><i class="fas fa-id-card"></i> ข้อมูลพื้นฐาน</h3></div>
-                        <div class="card-body">
-                            <table class="profile-info-table">
-                                <tr><td>รหัสพนักงาน</td><td id="profile-emp-id">กำลังโหลด...</td></tr>
-                                <tr><td>ชื่อ - นามสกุล</td><td id="profile-full-name">กำลังโหลด...</td></tr>
-                                <tr><td>แผนก</td><td id="profile-dept">กำลังโหลด...</td></tr>
-                                <tr><td>สิทธิ์</td><td><span id="profile-role" class="badge badge-approved">กำลังโหลด...</span></td></tr>
-                                <tr><td>เรทค่าจ้าง</td><td id="profile-hourly-rate">กำลังโหลด...</td></tr>
-                            </table>
+
+                <!-- Hero Banner -->
+                <div class="prof-hero">
+                    <div class="prof-hero-bg"></div>
+                    <div class="prof-hero-content">
+                        <div class="prof-avatar-wrap">
+                            <div class="prof-avatar" id="profile-avatar-big">?</div>
+                            <div class="prof-avatar-ring"></div>
                         </div>
-                    </div>
-                    <div class="card mb-0">
-                        <div class="card-header"><h3><i class="fas fa-calendar-check"></i> โควตาวันลาคงเหลือ (ปีนี้)</h3></div>
-                        <div class="card-body">
-                            <div class="profile-quota-row">
-                                <div class="pq-item pq-sick">
-                                    <div class="pq-label">ลาป่วย</div>
-                                    <div class="pq-value"><span id="profile-sick">0</span></div>
-                                    <div class="pq-sub">/ 30 วัน</div>
-                                </div>
-                                <div class="pq-item pq-person">
-                                    <div class="pq-label">ลากิจ</div>
-                                    <div class="pq-value"><span id="profile-personal">0</span></div>
-                                    <div class="pq-sub">/ 6 วัน</div>
-                                </div>
-                                <div class="pq-item pq-annual">
-                                    <div class="pq-label">พักร้อน</div>
-                                    <div class="pq-value"><span id="profile-annual">0</span></div>
-                                    <div class="pq-sub">/ 6 วัน</div>
-                                </div>
+                        <div class="prof-hero-info">
+                            <div class="prof-hero-name" id="profile-full-name">กำลังโหลด...</div>
+                            <div class="prof-hero-meta">
+                                <span class="prof-hero-tag"><i class="fas fa-id-badge"></i> <span id="profile-emp-id">—</span></span>
+                                <span class="prof-hero-tag"><i class="fas fa-building"></i> <span id="profile-dept">—</span></span>
+                                <span class="prof-hero-tag prof-role-tag"><i class="fas fa-shield-alt"></i> <span id="profile-role">—</span></span>
                             </div>
                         </div>
+                        <div class="prof-hero-rate">
+                            <div class="prof-rate-label">เรทค่าจ้าง</div>
+                            <div class="prof-rate-value" id="profile-hourly-rate">—</div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Quota Cards -->
+                <div class="prof-section-title">
+                    <i class="fas fa-calendar-alt"></i> โควตาวันลาคงเหลือปีนี้
+                </div>
+                <div class="prof-quota-grid">
+
+                    <div class="prof-qcard prof-qcard-sick">
+                        <div class="pqc-top">
+                            <div class="pqc-icon"><i class="fas fa-briefcase-medical"></i></div>
+                            <div class="pqc-type">ลาป่วย</div>
+                        </div>
+                        <div class="pqc-numbers">
+                            <span class="pqc-remain" id="profile-sick">0</span>
+                            <span class="pqc-total">/ 30</span>
+                            <span class="pqc-unit">วัน</span>
+                        </div>
+                        <div class="pqc-track">
+                            <div class="pqc-fill" id="pqc-sick-bar"></div>
+                        </div>
+                        <div class="pqc-used-label">ใช้ไปแล้ว <span id="pqc-sick-used">0</span> วัน</div>
+                    </div>
+
+                    <div class="prof-qcard prof-qcard-personal">
+                        <div class="pqc-top">
+                            <div class="pqc-icon"><i class="fas fa-user-clock"></i></div>
+                            <div class="pqc-type">ลากิจ</div>
+                        </div>
+                        <div class="pqc-numbers">
+                            <span class="pqc-remain" id="profile-personal">0</span>
+                            <span class="pqc-total">/ 6</span>
+                            <span class="pqc-unit">วัน</span>
+                        </div>
+                        <div class="pqc-track">
+                            <div class="pqc-fill" id="pqc-personal-bar"></div>
+                        </div>
+                        <div class="pqc-used-label">ใช้ไปแล้ว <span id="pqc-personal-used">0</span> วัน</div>
+                    </div>
+
+                    <div class="prof-qcard prof-qcard-annual">
+                        <div class="pqc-top">
+                            <div class="pqc-icon"><i class="fas fa-umbrella-beach"></i></div>
+                            <div class="pqc-type">ลาพักร้อน</div>
+                        </div>
+                        <div class="pqc-numbers">
+                            <span class="pqc-remain" id="profile-annual">0</span>
+                            <span class="pqc-total">/ 6</span>
+                            <span class="pqc-unit">วัน</span>
+                        </div>
+                        <div class="pqc-track">
+                            <div class="pqc-fill" id="pqc-annual-bar"></div>
+                        </div>
+                        <div class="pqc-used-label">ใช้ไปแล้ว <span id="pqc-annual-used">0</span> วัน</div>
+                    </div>
+
                 </div>
             </div>
 

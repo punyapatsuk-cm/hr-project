@@ -1,4 +1,3 @@
-// ── Config ──
 const API_BASE = 'http://localhost:1304';
 
 const LEAVE_TYPE_LABELS = {

@@ -1,4 +1,4 @@
-// ── แสดง/ซ่อน Error ──
+// ── ซ่อน Error ──
 function showLoginError(msg) {
     const el    = document.getElementById('login-error');
     const msgEl = document.getElementById('login-error-msg');

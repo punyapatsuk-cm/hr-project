@@ -199,14 +199,41 @@ async function loadUserProfile() {
     try {
         const { data: u } = await axios.get(`${API_BASE}/api/employee/profile/${empId}`, getAuthHeaders());
         const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.innerText = val; };
+        const fullName = `${u.first_name} ${u.last_name}`;
         setEl('profile-emp-id',      u.emp_id);
-        setEl('profile-full-name',   `${u.first_name} ${u.last_name}`);
+        setEl('profile-full-name',   fullName);
         setEl('profile-dept',        u.dept_name || 'ไม่ได้ระบุแผนก');
         setEl('profile-role',        u.role === 'admin' ? 'HR / ผู้ดูแลระบบ' : 'พนักงานทั่วไป');
         setEl('profile-hourly-rate', `฿${u.hourly_rate || 0} / ชั่วโมง`);
-        setEl('profile-sick',        u.sick_leave_remaining     ?? 0);
-        setEl('profile-personal',    u.personal_leave_remaining ?? 0);
-        setEl('profile-annual',      u.annual_leave_remaining   ?? 0);
+
+        // avatar ตัวอักษรแรก
+        const avatarBig = document.getElementById('profile-avatar-big');
+        if (avatarBig) avatarBig.textContent = (u.first_name || '?').charAt(0).toUpperCase();
+
+        const sick = u.sick_leave_remaining ?? 0;
+        const personal = u.personal_leave_remaining ?? 0;
+        const annual = u.annual_leave_remaining ?? 0;
+
+        setEl('profile-sick',     sick);
+        setEl('profile-personal', personal);
+        setEl('profile-annual',   annual);
+
+        // used labels
+        setEl('pqc-sick-used',     30 - sick);
+        setEl('pqc-personal-used', 6  - personal);
+        setEl('pqc-annual-used',   6  - annual);
+
+        // progress bars (แสดง % ที่ใช้ไปแล้ว)
+        setTimeout(() => {
+            const setBar = (id, used, total) => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = `${Math.min((used / total) * 100, 100)}%`;
+            };
+            setBar('pqc-sick-bar',     30 - sick,     30);
+            setBar('pqc-personal-bar', 6  - personal, 6);
+            setBar('pqc-annual-bar',   6  - annual,   6);
+        }, 100);
+
     } catch (err) {
         console.error('Profile Load Error:', err);
     }
